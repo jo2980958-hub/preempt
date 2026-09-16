@@ -22,7 +22,7 @@ and never a photograph. That is a testable claim, not a slogan, and
 | False alarms in 1.21 hours of observed quiet | **0** |
 | Fall sequences reaching "on the floor", UR Fall | **10 of 12**, median 0.50 s behind ground truth |
 | Camera bytes written to disk | **0** |
-| Tests | **101**, green |
+| Tests | **102**, green |
 
 Numbers, method and the failures in [docs/evaluation.md](docs/evaluation.md).
 
@@ -77,7 +77,7 @@ Other commands: `evaluate`, `urfall`, `calibrate`, `bench`, `samples`.
 .venv/bin/python -m pytest products/preempt/tests -q
 ```
 
-101 tests. The privacy tests run the whole pipeline with the real models over a
+102 tests. The privacy tests run the whole pipeline with the real models over a
 real video file and assert that nothing derived from those pixels was written.
 The pose tests are skipped, loudly, if `models/fetch.sh` has not been run.
 

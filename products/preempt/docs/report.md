@@ -3,7 +3,7 @@
 **A call before the fall, from an abstracted pose and nothing else.**
 
 Live endpoint: <https://2uhvgzwrwc.us-east-2.awsapprunner.com>
-OpenCV 5.0.0.93, pinned. AWS App Runner, us-east-2. 101 tests.
+OpenCV 5.0.0.93, pinned. AWS App Runner, us-east-2. 102 tests.
 
 ---
 
@@ -580,7 +580,7 @@ regulatory route this project does not claim to have.
 uv venv .venv --python 3.13
 uv pip install --python .venv/bin/python -e packages/visioncore -e packages/servicekit -e products/preempt
 products/preempt/models/fetch.sh
-.venv/bin/python -m pytest products/preempt/tests -q          # 101 tests
+.venv/bin/python -m pytest products/preempt/tests -q          # 102 tests
 .venv/bin/python -m preempt.cli evaluate --seeds 5 --quiet-loops 16
 products/preempt/eval/fetch_urfall.sh 12
 .venv/bin/python -m preempt.cli urfall products/preempt/eval/data --room products/preempt/eval/urfall-room.json
