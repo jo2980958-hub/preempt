@@ -3,5 +3,4 @@
 models/*.onnx
 models/*.zip
 eval/data
-docs/deck/*.png
 .pytest_cache

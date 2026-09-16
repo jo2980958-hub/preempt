@@ -12,7 +12,7 @@ Text uses OpenCV 5's `cv2.FontFace`, which renders through a real TrueType engin
 instead of the old Hershey strokes, so a ward screenshot does not look like a
 1990s machine-vision demo.
 
-Colours are Vellum's, from `docs/design/atlas.md`: a lilac-white ground, deep
+Colours are Vellum's: a lilac-white ground, deep
 indigo for structure, and a single crimson-rose that appears only when a call has
 been raised.
 """

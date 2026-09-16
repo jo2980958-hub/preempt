@@ -153,5 +153,3 @@ from it is committed here or appears in any document, deck or video.
 - [docs/architecture.md](docs/architecture.md) — pipeline, geometry and AWS diagrams
 - [docs/evaluation.md](docs/evaluation.md) — the numbers and the failures
 - [docs/costs.md](docs/costs.md) — what was created on AWS and what it costs
-- [docs/devpost.md](docs/devpost.md) — submission text
-- [docs/narration.md](docs/narration.md) — the video script
