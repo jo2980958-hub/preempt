@@ -1,0 +1,25 @@
+/* The elements the shell owns, looked up once. */
+
+export const $ = (sel) => document.querySelector(sel);
+
+export const ui = {
+  status: $('#status'),
+  results: $('#results'),
+  empty: $('#empty'),
+  picker: $('#picker'),
+  samples: $('#samples'),
+  progress: $('#progress'),
+  fill: $('#progress-fill'),
+  msg: $('#progress-msg'),
+  pct: $('#progress-pct'),
+  start: $('#start'),
+  startLabel: $('#start-label'),
+  startNote: $('#start-note'),
+  file: $('#file'),
+  title: $('#title'),
+  subtitle: $('#subtitle'),
+  crumb: $('#crumb'),
+  crumbDot: $('#crumb-dot'),
+  source: $('#tb-source'),
+  privacy: $('#tb-privacy'),
+};

@@ -53,6 +53,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     OPENCV26_UPLOAD_DIR=/tmp/uploads \
     PREEMPT_SAMPLES_DIR=/opt/preempt/samples \
+    PREEMPT_WEB_DIR=/opt/preempt/web \
     PREEMPT_ROOM=/opt/preempt/rooms/default.json \
     PREEMPT_RTMPOSE_URI=/opt/preempt/models/rtmpose-t-body7.onnx \
     OPENCV26_YOLOX_URI=/opt/preempt/models/yolox_tiny.onnx

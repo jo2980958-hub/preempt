@@ -5,6 +5,7 @@
    nothing behind it — no frame was retained to put there. */
 
 import { esc } from './format.js';
+import { headNote, highlight as ringKeypoint } from './figure-notes.js';
 
 const EDGES = [
   [5, 6], [5, 7], [7, 9], [6, 8], [8, 10], [5, 11], [6, 12],
@@ -13,7 +14,7 @@ const EDGES = [
 
 const W = 720;
 const H = 470;
-/* The badges sit over the top of the field and the statement over the bottom,
+/* The state chip sits above the field and the statement over the bottom of it,
    so the figure is fitted into what is left rather than into the whole panel. */
 const BOX = { x: 130, y: 58, w: W - 260, h: H - 58 - 142 };
 
@@ -65,35 +66,12 @@ export function drawFigure(frame) {
   return `<svg viewBox="0 0 ${W} ${H}" role="group"
       aria-label="The figure Preempt draws from seventeen coordinates. No photograph exists.">
     <rect width="${W}" height="${H}" fill="url(#pt-weave)"/>
-    ${head(pts, at)}
+    ${headNote(pts, at, W)}
     <g>${edges}</g>
     <g>${dots}</g>
     <g id="kp-lit"></g>
     <g>${hits}</g>
   </svg>`;
-}
-
-/** The head is five coordinates and no pixels; say so on the drawing. */
-function head(pts, at) {
-  const idx = [0, 1, 2, 3, 4].filter((i) => pts[i]?.seen);
-  if (idx.length < 2) return '';
-  const cx = idx.reduce((s, i) => s + at[i].x, 0) / idx.length;
-  const cy = idx.reduce((s, i) => s + at[i].y, 0) / idx.length;
-  const r = Math.max(24, Math.max(...idx.map((i) => Math.hypot(at[i].x - cx, at[i].y - cy))) + 13);
-  const text = `${idx.length} head coordinates, no pixels`;
-  const width = text.length * 9.2;
-  const right = cx + r + 42 + width < W - 10;     // keep the note inside the field
-  const dir = right ? 1 : -1;
-  const tipX = Math.min(Math.max(cx + dir * (r + 34), width + 16), W - width - 16);
-  const tipY = Math.max(cy - r - 20, 30);
-  return `<g>
-    <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}"
-      fill="none" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="5 5" opacity=".85"/>
-    <line x1="${(cx + dir * r * 0.72).toFixed(1)}" y1="${(cy - r * 0.72).toFixed(1)}"
-      x2="${tipX.toFixed(1)}" y2="${tipY.toFixed(1)}" stroke="var(--danger)" stroke-width="1.4"/>
-    <text class="kp-label" text-anchor="${right ? 'start' : 'end'}"
-      x="${(tipX + dir * 6).toFixed(1)}" y="${(tipY - 5).toFixed(1)}">${text}</text>
-  </g>`;
 }
 
 export function emptyField(message) {
@@ -104,21 +82,4 @@ export function emptyField(message) {
   </svg>`;
 }
 
-/** Ring and name the one keypoint the reader is pointing at. */
-export function highlight(svg, frame, index) {
-  const layer = svg?.querySelector('#kp-lit');
-  if (!layer) return;
-  const dot = svg.querySelector(`.kp-dot[data-kp="${index}"]`);
-  if (index === null || !dot) { layer.innerHTML = ''; return; }
-  const p = frame.keypoints[index];
-  const cx = Number(dot.getAttribute('cx'));
-  const cy = Number(dot.getAttribute('cy'));
-  const label = `${p.name} · ${p.x}, ${p.y}`;
-  const wide = label.length * 9.1;
-  const right = cx < W - wide - 40;
-  const bx = right ? cx + 16 : cx - 16 - wide;
-  layer.innerHTML = `<circle class="kp-ring" cx="${cx}" cy="${cy}" r="11"/>
-    <rect class="kp-plate" x="${bx.toFixed(1)}" y="${(cy - 30).toFixed(1)}"
-      width="${wide.toFixed(1)}" height="26" rx="4"/>
-    <text class="kp-label" x="${(bx + 8).toFixed(1)}" y="${(cy - 12).toFixed(1)}">${esc(label)}</text>`;
-}
+export const highlight = (svg, frame, index) => ringKeypoint(svg, frame, index, W);

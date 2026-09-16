@@ -634,9 +634,46 @@ def scenario_curtain_drawn(camera: SynthCamera, room: RoomConfig, fps: float, rn
     return sequence
 
 
+def scenario_personal_care(camera: SynthCamera, room: RoomConfig, fps: float, rng) -> Sequence:
+    """The cost of privacy, made visible: staff pause the camera for washing.
+
+    Falls cluster around bathing, toileting and dressing, and those are exactly
+    the activities a ward will pause the camera for. A product that quietly showed
+    a calm green light through that window would be lying by omission. This
+    sequence exists so that the interface, the run record and the report all have
+    to say how long the system was blind by choice, and that what happened then is
+    unknowable rather than nothing.
+    """
+    b = _Builder(camera, fps, rng)
+    b.hold(place(posture(lying=1.0), BED_XY, 0.0, lift_z=BED_SURFACE_Z), 4.0)
+    b.ramp(
+        lambda u: place(
+            posture(lying=1.0 - u, knee_bend=0.9 * u, seat_height=BED_SURFACE_Z * u),
+            BED_XY, 0.0, lift_z=BED_SURFACE_Z * (1 - u),
+        ),
+        1.5,
+    )
+    paused_from = len(b.world)
+    b.hold(place(posture(knee_bend=0.9, seat_height=BED_SURFACE_Z), BED_XY, 0.0), 9.0)
+    paused_to = len(b.world)
+    b.hold(place(posture(lying=1.0), BED_XY, 0.0, lift_z=BED_SURFACE_Z), 4.0)
+    sequence = b.build(
+        "personal-care-pause",
+        "Staff pause the camera while a patient is washed. The product must say how "
+        "long it was blind and that the window is unknowable.",
+        room,
+        {"should_call": False, "expect_state": "paused", "expect_unsteady": False},
+    )
+    sequence.view_hints = {
+        i: "paused for personal care" for i in range(paused_from, paused_to)
+    }
+    return sequence
+
+
 SCENARIOS = {
     "bed-exit-steady": scenario_bed_exit_steady,
     "curtain-drawn": scenario_curtain_drawn,
+    "personal-care-pause": scenario_personal_care,
     "bed-exit-unsteady": scenario_bed_exit_unsteady,
     "bed-exit-to-floor": scenario_bed_exit_to_floor,
     "settled-turning-over": scenario_settled,

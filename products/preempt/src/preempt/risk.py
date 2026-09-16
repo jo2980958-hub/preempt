@@ -5,6 +5,7 @@ lying to a ward that has no way to check. What it does is name the situation it
 can see and list the measurements behind that name, so a nurse can decide in two
 seconds whether it is worth walking down the corridor.
 
+    paused           staff turned it off for personal care, and said so
     settled          nothing to do
     watch            something changed, no call
     rising soon      the movement that precedes standing, while still supported
@@ -30,6 +31,7 @@ from .config import Thresholds
 from .exits import ON_FLOOR, PREPARING, RISING, STANDING, WALKING, ExitReading
 from .gait import GaitReport
 from .hazards import HazardReport
+from . import view as view_module
 from .view import ViewReport
 
 SETTLED = "settled"
@@ -38,6 +40,7 @@ RISING_SOON = "rising soon"
 UNSTEADY = "unsteady"
 FLOOR = "on the floor"
 UNUSABLE = "view unusable"
+PAUSED = "paused"
 
 RISK_ORDER = (UNUSABLE, SETTLED, WATCH, RISING_SOON, UNSTEADY, FLOOR)
 RISK_RANK = {name: i for i, name in enumerate((SETTLED, WATCH, RISING_SOON, UNSTEADY, FLOOR))}
@@ -49,6 +52,7 @@ HEADLINE = {
     UNSTEADY: "Unsteady on their feet",
     FLOOR: "On the floor",
     UNUSABLE: "Cannot see the room",
+    PAUSED: "Paused for personal care",
 }
 
 
@@ -94,6 +98,19 @@ def assess(
 ) -> RiskState:
     """Fuse the four channels into one state. Order of precedence is deliberate."""
     hazard_reasons = [h.description for h in (hazards.hazards if hazards else [])]
+
+    if view.state == view_module.PAUSED:
+        return RiskState(
+            time_s=time_s,
+            state=PAUSED,
+            headline=HEADLINE[PAUSED],
+            reasons=[
+                "staff paused the camera for personal care",
+                "nothing is being assessed, and anything that happens now is unknowable",
+            ],
+            hazard_reasons=hazard_reasons,
+            certainty="deliberately not watching",
+        )
 
     if not view.usable:
         return RiskState(

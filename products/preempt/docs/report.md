@@ -3,7 +3,7 @@
 **A call before the fall, from an abstracted pose and nothing else.**
 
 Live endpoint: <https://2uhvgzwrwc.us-east-2.awsapprunner.com>
-OpenCV 5.0.0.93, pinned. AWS App Runner, us-east-2. 99 tests.
+OpenCV 5.0.0.93, pinned. AWS App Runner, us-east-2. 101 tests.
 
 ---
 
@@ -396,6 +396,37 @@ How it is enforced rather than promised:
 4. `diagnostic` mode exists for a bench and raises unless an environment variable
    is set that the deployed service never sets.
 
+### The code path, rather than the claim
+
+There is one place where a frame becomes keypoints, and one line where it stops
+existing. From `pipeline.Pipeline.run_video`:
+
+```python
+with stage("pose:total"):
+    pose = self.estimator.estimate(image, frame.index, time_s)
+view = self.view.grade(image, time_s, person_seen=pose is not None)
+hazards = self.hazards.scan(image, time_s, ...)
+# Everything the camera gave us has now been read. Destroy it.
+self.guard.release(image)
+```
+
+and `PrivacyGuard.release`:
+
+```python
+def release(self, image: np.ndarray) -> None:
+    if self.mode == "strict":
+        try:
+            image[...] = 0
+        except (ValueError, TypeError):   # a read-only view; nothing to do
+            pass
+    else:
+        self.ledger.frames_retained += 1
+```
+
+`image[...] = 0` is an in-place write to the one buffer, not a rebinding. There is
+one frame in memory at a time, it is overwritten before the next decode, and no
+reference to it survives the loop.
+
 `tests/test_privacy.py` runs the whole pipeline with the real models over a real
 video whose every frame is unique high-entropy content, then asserts zero camera
 bytes persisted, zero frames retained, correlation below 0.35 between every
@@ -405,6 +436,24 @@ The interface shows the same ledger the tests assert on: the seventeen keypoints
 with their coordinates and scores, next to the figure they produced, above a line
 saying how many camera bytes were written. The privacy claim is not a shield icon.
 It is the raw payload, printed.
+
+### The cost of privacy, published rather than hidden
+
+Privacy has a price here and the product states it rather than absorbing it.
+
+A ward will pause the camera for washing, toileting and dressing, and it should:
+those are the activities where camera acceptance is lowest, and there is a button
+for it. They are also, from section 1, among the activities where a large share of
+falls happen. So a paused camera is a **first-class state** rather than an
+absence. Every run reports `blind_by_choice_s` separately from `faulty_s`, the
+interface shows it, and the record carries a `BLIND_BY_CHOICE` refusal whose
+message says the window is **unknowable, not absent**.
+
+The consequence has to be said plainly: **calls missed while the camera is paused
+cannot be counted, by anyone, including us.** A detection rate measured over a
+shift that was blind for three hours is not the same quantity as one measured over
+a shift that watched all night, and this product publishes the denominator so that
+the difference is visible rather than quietly folded in.
 
 **One compression figure that makes the point.** A 1280x720 BGR frame is 2.76 MB.
 The seventeen keypoints kept from it are 408 bytes. The ratio is about 6,800 to 1,
@@ -459,8 +508,12 @@ Section 1 explains why. Preempt is a bedroom-and-bay product and the honest answ
 about the bathroom is that a camera should not be in it, so a different sensing
 modality is needed there.
 
-**The false-alarm rate has a small denominator.** Zero false alarms in 1.18 hours
-of observed quiet is real but it is 1.18 hours. Nothing here is a bed-night.
+**And the same is true of every minute the camera is paused.** Section 5 has the
+measurement; the limitation is that nobody, including this evaluation, can say
+what was missed in those windows.
+
+**The false-alarm rate has a small denominator.** Zero false alarms in 1.21 hours
+of observed quiet is real but it is 1.21 hours. Nothing here is a bed-night.
 
 **No outcome evidence exists.** No deployed-system outcome trial could be found
 for any camera safety product in this domain. This has not been shown to reduce
@@ -527,7 +580,7 @@ regulatory route this project does not claim to have.
 uv venv .venv --python 3.13
 uv pip install --python .venv/bin/python -e packages/visioncore -e packages/servicekit -e products/preempt
 products/preempt/models/fetch.sh
-.venv/bin/python -m pytest products/preempt/tests -q          # 99 tests
+.venv/bin/python -m pytest products/preempt/tests -q          # 101 tests
 .venv/bin/python -m preempt.cli evaluate --seeds 5 --quiet-loops 16
 products/preempt/eval/fetch_urfall.sh 12
 .venv/bin/python -m preempt.cli urfall products/preempt/eval/data --room products/preempt/eval/urfall-room.json

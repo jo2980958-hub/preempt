@@ -19,10 +19,10 @@ and never a photograph. That is a testable claim, not a slogan, and
 |---|---|
 | Median lead time before the person is upright | **4.60 s** (4.07 to 5.60) |
 | Detection rate, synthetic decision layer | **100 %** (20 of 20) |
-| False alarms in 1.18 hours of observed quiet | **0** |
+| False alarms in 1.21 hours of observed quiet | **0** |
 | Fall sequences reaching "on the floor", UR Fall | **10 of 12**, median 0.50 s behind ground truth |
 | Camera bytes written to disk | **0** |
-| Tests | **99**, green |
+| Tests | **101**, green |
 
 Numbers, method and the failures in [docs/evaluation.md](docs/evaluation.md).
 
@@ -77,7 +77,7 @@ Other commands: `evaluate`, `urfall`, `calibrate`, `bench`, `samples`.
 .venv/bin/python -m pytest products/preempt/tests -q
 ```
 
-99 tests. The privacy tests run the whole pipeline with the real models over a
+101 tests. The privacy tests run the whole pipeline with the real models over a
 real video file and assert that nothing derived from those pixels was written.
 The pose tests are skipped, loudly, if `models/fetch.sh` has not been run.
 

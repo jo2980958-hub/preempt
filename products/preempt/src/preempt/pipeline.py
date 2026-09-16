@@ -42,6 +42,7 @@ from .privacy import PrivacyGuard, Provenance
 from .render import encode_png, plan_card, pose_card
 from .risk import FLOOR, RISING_SOON, UNSTEADY, RiskState, assess
 from .synth import load_track
+from .view import PAUSED as view_paused
 from .view import USABLE, ViewMonitor, ViewReport, summarise
 
 PRODUCT = "preempt"
@@ -384,9 +385,20 @@ def build_record(analysis: Analysis, pipeline: Pipeline, *, params: dict[str, An
         },
     ]
 
+    blind = metrics["view"].get("blind_by_choice_s", 0.0)
+    if blind > 0:
+        record.refuse(
+            "BLIND_BY_CHOICE",
+            f"the camera was paused for personal care for {blind:.0f} s. Nothing was "
+            "assessed in that window and anything that happened in it is unknowable, "
+            "not absent. Falls cluster around exactly these activities.",
+            seconds=blind,
+        )
     for note in pipeline.guard.ledger.refusals:
         record.refuse("PRIVACY_REFUSED", note)
-    unusable = [r for r in pipeline.view_reports if not r.usable]
+    unusable = [
+        r for r in pipeline.view_reports if not r.usable and r.state != view_paused
+    ]
     if unusable:
         worst = unusable[0]
         record.refuse(

@@ -1,9 +1,9 @@
 {
   "summary": {
-    "source": "synthetic, 9 scenarios x 5 noise seeds, quiet scenarios looped 16x",
-    "sequences": 45,
+    "source": "synthetic, 10 scenarios x 5 noise seeds, quiet scenarios looped 16x",
+    "sequences": 50,
     "positives": 20,
-    "negatives": 25,
+    "negatives": 30,
     "detection_rate": 1.0,
     "lead_time_s_bed_and_chair_exits": {
       "n": 10,
@@ -13,7 +13,7 @@
       "max": 5.6
     },
     "false_alarms": 0,
-    "quiet_hours_observed": 1.1837,
+    "quiet_hours_observed": 1.2094,
     "false_alarms_per_bed_night": 0.0,
     "failures": [],
     "thresholds": {
@@ -295,6 +295,66 @@
       "lead_time_s": null,
       "calls": 0,
       "duration_s": 15.9,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "personal-care-pause#0",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "paused",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 18.5,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "personal-care-pause#1",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "paused",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 18.5,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "personal-care-pause#2",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "paused",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 18.5,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "personal-care-pause#3",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "paused",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 18.5,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "personal-care-pause#4",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "paused",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 18.5,
       "correct": true,
       "note": ""
     },

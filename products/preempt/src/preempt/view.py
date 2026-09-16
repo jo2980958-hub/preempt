@@ -15,6 +15,11 @@ rather than averaged away:
   confidently. ORB against the first usable frame, median match displacement.
 * **out of frame** - no usable pose for a while. Not a fault, but not a state we
   may report anything about either.
+* **paused for personal care** - staff turned the camera off, deliberately. Not a
+  fault at all, and the most important of the five to record honestly: falls
+  cluster around bathing, toileting and dressing, which is exactly when a ward
+  will pause. Every run reports how long it was blind by choice, and says that
+  anything that happened in that window is unknowable rather than absent.
 
 All four are computed with OpenCV: `calcHist`, `Laplacian`, `ORB` +
 `BFMatcher`. None of them retain an image; the reference ORB descriptors live in
@@ -37,14 +42,22 @@ TOO_DARK = "too dark"
 BLOCKED = "blocked"
 CAMERA_MOVED = "camera moved"
 NO_PERSON = "person out of frame"
+PAUSED = "paused for personal care"
 
-VIEW_STATES = (USABLE, TOO_DARK, BLOCKED, CAMERA_MOVED, NO_PERSON)
+VIEW_STATES = (USABLE, TOO_DARK, BLOCKED, CAMERA_MOVED, NO_PERSON, PAUSED)
+
+FAULTS = (TOO_DARK, BLOCKED, CAMERA_MOVED)
+"""The states somebody has to go and fix. `PAUSED` is not one of them."""
 
 REMEDY = {
     TOO_DARK: "turn on the night light or move the camera off the window",
     BLOCKED: "check the lens for a curtain, a coat or condensation",
     CAMERA_MOVED: "the zones no longer match the room: re-draw bed, chair and door",
     NO_PERSON: "nobody is in view, so nothing is being assessed",
+    PAUSED: (
+        "staff paused the camera for personal care. Nothing is being assessed and "
+        "anything that happens in this window is unknowable"
+    ),
 }
 
 
@@ -176,6 +189,8 @@ class ViewMonitor:
         """
         if person_seen:
             self._last_person_s = time_s
+        if hint == PAUSED:
+            return ViewReport(PAUSED, time_s, 0.0, 0.0, 0.0, None, REMEDY[PAUSED])
         if hint != USABLE:
             return ViewReport(hint, time_s, 0.0, 0.0, 0.0, None, REMEDY.get(hint, ""))
         last = self._last_person_s
@@ -195,8 +210,12 @@ def summarise(reports: list[ViewReport]) -> dict[str, Any]:
     for r in reports:
         counts[r.state] = counts.get(r.state, 0) + 1
     total = max(1, len(reports))
+    span = (reports[-1].time_s - reports[0].time_s) if len(reports) > 1 else 0.0
+    per_sample = span / max(1, total - 1) if total > 1 else 0.0
     return {
         "frames": len(reports),
         "usable_fraction": round(counts[USABLE] / total, 4),
         "by_state": {k: v for k, v in counts.items() if v},
+        "blind_by_choice_s": round(counts[PAUSED] * per_sample, 2),
+        "faulty_s": round(sum(counts[s] for s in FAULTS) * per_sample, 2),
     }

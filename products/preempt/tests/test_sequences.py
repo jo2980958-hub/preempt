@@ -142,3 +142,29 @@ def test_every_scenario_produces_a_serialisable_record(tmp_path):
         assert record.metrics["peak_state"] in (
             "settled", "watch", "rising soon", "unsteady", "on the floor", "view unusable",
         )
+
+
+# --- the cost of privacy ---------------------------------------------------
+
+
+def test_a_paused_camera_is_reported_as_blind_by_choice_not_as_a_fault():
+    """Falls cluster around exactly the activities a ward pauses the camera for."""
+    _, _, analysis = run("personal-care-pause")
+    assert not called(analysis), "a call was raised while the camera was paused"
+    assert not analysis.calls, "even a maintenance notice is wrong here: staff paused it"
+    paused = [m for m in analysis.moments if m.risk.state == "paused"]
+    assert paused, "the paused window was not marked"
+    assert paused[0].risk.certainty == "deliberately not watching"
+    assert any("unknowable" in r for r in paused[0].risk.reasons)
+
+
+def test_the_record_says_how_long_it_was_blind_and_that_the_window_is_unknowable(tmp_path):
+    sequence = make("personal-care-pause")
+    path = sequence.save(tmp_path / "pause.json")
+    record, _ = analyse_track(path)
+    view = record.metrics["view"]
+    assert view["blind_by_choice_s"] > 5.0
+    assert view["faulty_s"] == 0.0, "a deliberate pause is not a fault"
+    refusal = next(r for r in record.refusals if r.code == "BLIND_BY_CHOICE")
+    assert "unknowable" in refusal.message
+    assert "VIEW_UNUSABLE" not in {r.code for r in record.refusals}

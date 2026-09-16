@@ -25,7 +25,7 @@ python -m preempt.cli bench --runs 40
 
 ## 1. Two tracks, and what each one can prove
 
-**The synthetic track** measures the decision layer. Nine scenarios are generated
+**The synthetic track** measures the decision layer. Ten scenarios are generated
 by projecting a seventeen-joint body model through a pinhole camera whose floor
 homography, vertical vanishing point and reference height the engine is then
 given, so the geometry is exact and any error is the engine's. Keypoints get
@@ -91,21 +91,21 @@ one. That gap is the product, and 4.6 seconds is how wide it measured.
 
 ## 3. Detection rate and false alarms, synthetic track
 
-Nine scenarios at five noise seeds each, with the quiet scenarios looped sixteen
+Ten scenarios at five noise seeds each, with the quiet scenarios looped sixteen
 times so that the false-alarm denominator is worth dividing by.
 
 | | |
 |---|---|
-| sequences | 45 |
+| sequences | 50 |
 | should have called | 20 |
 | called | 20 (**100 per cent**) |
-| should not have called | 25 |
+| should not have called | 30 |
 | called anyway | **0** |
-| quiet time observed | 1.18 hours |
+| quiet time observed | 1.21 hours |
 | false alarms per bed-night (12 h) | **0.0** |
 | failures | none |
 
-**Read the false-alarm figure with its denominator.** 1.18 hours of quiet
+**Read the false-alarm figure with its denominator.** 1.21 hours of quiet
 extrapolated to a twelve-hour night is an assumption, not a measurement. One
 stray call in that window would have scaled to about ten a night. The number is
 zero because nothing fired, not because the observation was long.
@@ -113,6 +113,30 @@ zero because nothing fired, not because the observation was long.
 The quiet scenarios are the ones a ward would worry about: a patient asleep who
 turns over twice, a patient who sits up in bed to drink and lies back down, a
 visitor shifting in the chair, a member of staff walking across the room.
+
+### The cost of privacy, measured rather than assumed
+
+One of the ten scenarios exists only to make a cost visible. A ward will pause the
+camera for washing and dressing, and it should: those are the activities where
+camera acceptance is lowest. They are also, from section 1, among the activities
+where a large share of falls happen.
+
+So `personal-care-pause` runs a sequence in which staff pause the camera for nine
+seconds. The product does not show a calm green light through it. It reports
+
+```
+"blind_by_choice_s": 9.0,  "faulty_s": 0.0
+```
+
+and refuses with `BLIND_BY_CHOICE`, whose message says that the window is
+**unknowable, not absent**. No call is raised, not even a maintenance notice,
+because staff pressed the button and do not need telling.
+
+Two tests assert it, and the number belongs in a ward report next to the call
+count: a system that was blind for three hours of a shift has a detection rate
+that means something different from one that watched all night. Calls missed in
+those periods cannot be counted, which means no evaluation of this product,
+including this one, can put a number on them.
 
 ## 4. The whole pipeline on real footage
 

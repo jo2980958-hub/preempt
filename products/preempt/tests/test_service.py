@@ -119,3 +119,18 @@ def _await_job(client, job_id: str, tries: int = 400) -> dict:
             raise AssertionError(f"job failed: {payload['error']}")
         time.sleep(0.05)
     raise AssertionError("job did not finish")
+
+
+def test_the_product_serves_its_own_front_end_and_not_the_shared_shell(client):
+    """The failure this catches is silent: the shell page looks fine and is wrong.
+
+    `servicekit` falls back to its generic shell when `static_dir` does not
+    exist. In the container the package lives in site-packages, so the path
+    relative to `__file__` is not the product root, and a deployed image served
+    the shell for several hours without anything complaining.
+    """
+    body = client.get("/").text
+    assert 'data-demo="sample-picker"' in body, "the shared shell is being served"
+    assert 'data-demo="start"' in body
+    for asset in ("/assets/css/app.css", "/assets/js/app.js"):
+        assert client.get(asset).status_code == 200, f"{asset} is not being served"

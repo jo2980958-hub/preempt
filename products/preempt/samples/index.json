@@ -6,16 +6,34 @@
     "duration_s": 15.7
   },
   {
+    "file": "bed-exit-to-floor.json",
+    "name": "bed-exit-to-floor",
+    "description": "The exit is not caught in time and the patient ends up on the floor.",
+    "duration_s": 18.9
+  },
+  {
     "file": "bed-exit-unsteady.json",
     "name": "bed-exit-unsteady",
     "description": "The same exit, but the walk that follows is wide and irregular.",
     "duration_s": 18.6
   },
   {
-    "file": "bed-exit-to-floor.json",
-    "name": "bed-exit-to-floor",
-    "description": "The exit is not caught in time and the patient ends up on the floor.",
-    "duration_s": 18.9
+    "file": "curtain-drawn.json",
+    "name": "curtain-drawn",
+    "description": "A curtain is pulled across the lens while the patient is sitting up. The product must say it cannot see.",
+    "duration_s": 16.0
+  },
+  {
+    "file": "personal-care-pause.json",
+    "name": "personal-care-pause",
+    "description": "Staff pause the camera while a patient is washed. The product must say how long it was blind and that the window is unknowable.",
+    "duration_s": 18.5
+  },
+  {
+    "file": "sat-up-and-lay-back.json",
+    "name": "sat-up-and-lay-back",
+    "description": "A patient sits up in bed to drink and lies back down. No call should be raised.",
+    "duration_s": 15.6
   },
   {
     "file": "settled-turning-over.json",
@@ -24,10 +42,10 @@
     "duration_s": 20.0
   },
   {
-    "file": "visitor-in-chair.json",
-    "name": "visitor-in-chair",
-    "description": "Someone sits in the chair and shifts position without getting up.",
-    "duration_s": 17.0
+    "file": "steady-walk.json",
+    "name": "steady-walk",
+    "description": "A member of staff walks across the room steadily. Gait should not be called unsteady.",
+    "duration_s": 10.0
   },
   {
     "file": "unsteady-walk.json",
@@ -36,9 +54,9 @@
     "duration_s": 8.0
   },
   {
-    "file": "curtain-drawn.json",
-    "name": "curtain-drawn",
-    "description": "A curtain is pulled across the lens while the patient is sitting up. The product must say it cannot see.",
-    "duration_s": 16.0
+    "file": "visitor-in-chair.json",
+    "name": "visitor-in-chair",
+    "description": "Someone sits in the chair and shifts position without getting up.",
+    "duration_s": 17.0
   }
 ]

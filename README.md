@@ -19,10 +19,10 @@ claim, not a slogan.
 |---|---|
 | Median lead time before the person is upright | **4.60 s** |
 | Detection rate, synthetic decision layer | **100 %** (20 of 20) |
-| False alarms in 1.18 hours of observed quiet | **0** |
+| False alarms in 1.21 hours of observed quiet | **0** |
 | Real fall sequences reaching "on the floor" | **10 of 12**, median 0.50 s behind ground truth |
 | Camera bytes written to disk | **0** |
-| Tests | **99** |
+| Tests | **102** |
 
 ## Start here
 

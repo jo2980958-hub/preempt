@@ -25,13 +25,14 @@ export function ribbonHtml(samples, calls, duration) {
   const labels = runs.map((r, i) => {
     const s = stateOf(r.state);
     // Only label a band that is wide enough for the word at phone width (~340 px).
-    const show = named.get(r.state) === i && ((r.end - r.start) / span) * 340 > s.word.length * 7.8;
+    const show = named.get(r.state) === i && ((r.end - r.start) / span) * 320 > s.word.length * 8.6;
     return `<i style="width:${pct(r.end - r.start)}">${show ? esc(s.word) : ''}</i>`;
   }).join('');
 
   const pins = calls.map((c, i) => {
     const hot = c.rung === 'urgent';
-    return `<b class="pin${hot ? ' hot' : ''}" style="left:${pct(c.time_s)}"
+    return `<b class="pin${hot ? ' hot' : ''}"
+      style="left:clamp(12px, ${pct(c.time_s)}, calc(100% - 12px))"
       title="${esc(c.wording)} at ${stamp(c.time_s)}"><span>${i + 1}</span></b>`;
   }).join('');
 
@@ -90,7 +91,7 @@ export function readoutsHtml(sample) {
     ['Hip height', unit(e.hip_height_m, ' m', 2)],
     ['Knee angle', unit(e.knee_deg, '°', 0)],
     ['Trunk angle', unit(e.trunk_deg, '°', 0)],
-    ['Lean over the feet', unit(e.lean_offset, '', 2)],
+    ['Lean over feet', unit(e.lean_offset, '', 2)],
     ['Steadiness', g?.scored ? unit(g.score, '', 2) : '<span class="faint">not scored</span>'],
   ];
   return tiles.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');

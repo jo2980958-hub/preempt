@@ -35,7 +35,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .config import Thresholds
-from .risk import FLOOR, RISING_SOON, UNSTEADY, UNUSABLE, RiskState
+from .risk import FLOOR, PAUSED, RISING_SOON, UNSTEADY, UNUSABLE, RiskState
 
 NONE = "none"
 NUDGE = "nudge"
@@ -126,6 +126,10 @@ class EscalationLadder:
     # -- the step -----------------------------------------------------------
     def update(self, risk: RiskState, *, has_hazard: bool) -> Call | None:
         """Returns the call raised at this instant, or None."""
+        if risk.state == PAUSED:
+            # Not even a maintenance notice. Staff know: they pressed the button.
+            self._reset()
+            return None
         if risk.state == UNUSABLE:
             self._reset()
             if self._maintenance_sent:

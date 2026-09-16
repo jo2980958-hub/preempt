@@ -37,7 +37,16 @@ SAMPLES_DIR = Path(
         "PREEMPT_SAMPLES_DIR", str(Path(__file__).resolve().parents[2] / "samples")
     )
 )
-WEB_DIR = Path(__file__).resolve().parents[2] / "web"
+WEB_DIR = Path(
+    __import__("os").environ.get(
+        "PREEMPT_WEB_DIR", str(Path(__file__).resolve().parents[2] / "web")
+    )
+)
+"""The product's own front end. In the container the package lives in
+site-packages, so `parents[2]` is not the product root and the env var is what
+finds it. Getting this wrong is silent: `create_app` falls back to the shared
+shell and serves a generic page that looks fine until you notice it is not
+Preempt."""
 ROOM_JSON = Path(
     __import__("os").environ.get(
         "PREEMPT_ROOM", str(Path(__file__).resolve().parents[2] / "rooms" / "default.json")
