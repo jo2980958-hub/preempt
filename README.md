@@ -59,7 +59,7 @@ products/preempt/models/fetch.sh
 
 ## Licences
 
-Code in this repository is the authors'. The two models it runs are **Apache-2.0**
+Code in this repository is released under the MIT licence (see `LICENSE`). The two models it runs are **Apache-2.0**
 (RTMPose-t from OpenMMLab, YOLOX-tiny from Megvii) and are fetched rather than
 committed. Nothing here imports `ultralytics`, whose AGPL-3.0 section 13 would
 make a hosted demo a source-disclosure event.
