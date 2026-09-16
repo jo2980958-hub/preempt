@@ -3,7 +3,7 @@
 **A call before the fall, from an abstracted pose and nothing else.**
 
 Live endpoint: <https://2uhvgzwrwc.us-east-2.awsapprunner.com>
-OpenCV 5.0.0.93, pinned. AWS App Runner, us-east-2. 102 tests.
+OpenCV 5.0.0.93, pinned. AWS App Runner, us-east-2. 124 tests.
 
 ---
 
@@ -248,6 +248,18 @@ outstretched hand, and the code records which of the two it is doing. Without a
 vertical reference, every height is refused with a reason and the back-projection
 still works.
 
+**The same construction breaks when the camera is at hip height**, and real
+footage found that out. The torso's floor position is the hips' shadow, found by
+sliding down the vertical from the hips by their measured height. When the
+camera is at about the height of the hips, the ray to them is nearly level and
+the construction is singular. On a CDC training clip filmed at 0.81 m, one pixel
+of keypoint noise moved a standing woman's torso tens of metres, and the Kalman
+filter reported 16 m/s for somebody standing still. The conditioning is now
+measured every frame. If one pixel would move the shadow more than 3 cm, the
+feet are used, because they are on the floor and always well placed. The
+synthetic ward camera, 2.55 m up, sits at 5 to 14 mm a pixel and never
+triggers it.
+
 ### 4.5 Setting a camera up by walking through the room
 
 Asking a ward to measure a floor rectangle with a tape is the step most likely to
@@ -273,6 +285,27 @@ Fall camera the fitted horizon came out tilted 24 degrees and the focal length h
 no real solution at all. The module now falls back to a one-dimensional search for
 a level horizon, and takes a known focal length in preference to either, which is
 what the UR Fall evaluation uses.
+
+It also refuses when the footage cannot support it. On both fixed CDC chair-stand
+shots it refused: an implausible camera height on one, an implausible focal
+length on the other. Nobody in those shots walks toward or away from the camera,
+which is the movement the method needs.
+
+**Every room says how far its camera can be trusted.** A room setup carries a
+`calibration` block: camera height and focal length, each `measured`, `assumed`
+or `synthetic`. A room with no block counts as unstated, and the interface treats
+that as assumed, never as measured. A room recovered by walking is marked assumed,
+because it rests on an assumed stature. The block travels into the result and
+onto both evidence cards.
+
+**And a room travels with the job.** The first deployment had one room built in,
+the synthetic ward's, and an upload could not bring another. So every third-party
+video was measured against the wrong floor. On one CDC clip the woman's feet fell
+inside the built-in bed zone, and all three of her stands read as "supported" and
+were missed. An upload now carries its own room, checked by the same parser as
+the command line, and a bad room is a 400 that names the field. Before a video
+runs, the interface draws the room over its first frame, decoded in the browser,
+so a room drawn for a different camera is obvious before any analysis.
 
 ### 4.6 Where the seconds come from
 
@@ -306,11 +339,30 @@ evaluation: somebody crossing the room past the foot of the bed can satisfy the
 edge test and the lean test in the same instant, and nobody begins to stand up
 while they are already walking.
 
+**None of the three could tell sitting down from getting up.** Real footage found
+this. On a CDC chair-stand clip, all three stands were called, and three more
+calls fired, each one as the woman sat back down. To lower yourself onto a seat
+you lean over your feet with your knees bent, and that is the same shape. So a
+fourth condition uses the direction of travel. If the hips are coming down from
+standing, falling at least as fast as a rise goes up (0.25 m/s over half a
+second), or the knees are closing at 90 degrees a second where there is no metric
+height, and the person was upright in the last two seconds, then the lean is
+evidence of a sit-down and is thrown away. A rise starts with the hips seated and
+still, or going up, so its evidence is untouched. On the clip the three sit-down
+calls went and the three stands were still called at the same instants. On the
+synthetic track nothing else moved. The old engine also failed 3 of 10 new
+synthetic sit-down sequences, so this was not a quirk of one clip.
+
 Evidence is allowed a 0.35 second grace before the clock restarts, because one bad
 frame is keypoint noise and not a change of mind, and without it the evidence
 restarts several times during a real transfer and the call arrives a second late.
 
-**Median lead time: 4.60 seconds**, range 4.07 to 5.60.
+**Median lead time: 4.60 seconds** over the ten bed exits, range 4.07 to 5.60. The
+five quick chair stands added with the sit-down fix give 0.73 to 1.00 s, because
+a patient standing straight up out of a chair leans for about a second. Over all
+fifteen exits the median is 4.47 s. On the real CDC chair-stand footage, the fast
+test the CDC uses to measure leg strength, the three calls came 0.08, 0.42 and
+0.41 s before upright.
 
 ### 4.7 Unsteady gait
 
@@ -498,12 +550,29 @@ it is a detector trained with supine and prone people in it.
 
 **One camera, one person.** There is no multi-person tracking. A room with a
 visitor and a patient in it will track the larger of the two. That is a real gap
-for a shared bay, and it is a design choice for a side room.
+for a shared bay, and it is a design choice for a side room. Real footage shows
+the cost. In the front-facing CDC chair-stand clip a clinician stands beside the
+patient throughout. While the patient sits, the clinician's box is bigger, so the
+clinician is tracked. Tracking jumps to the patient only once she is nearly up,
+0.68 m across the floor in one frame. No stand is seen from start to finish, all
+three are missed, and the jump reads as walking for most of a second.
 
 **The metres are only as good as the setup.** With four measured floor points the
 geometry is exact to a centimetre. With the walking-person calibration it is as
 good as the assumed stature: assume 1.75 m for a 1.60 m patient and every height
-reads about 9 per cent high.
+reads about 9 per cent high. The real footage evaluated here was run in rooms set
+up by hand, with a camera height worked out by assuming a clinician is 1.65 m
+tall. Those rooms say `assumed`, and so does every result from them.
+
+**A room set up for another camera is silently wrong unless someone looks.** The
+engine cannot tell that a room belongs to a different camera. The preview that
+draws the room over the first frame is how a person tells. With the built-in room
+on a CDC clip, a bed zone lay across the chair and three stands were missed.
+
+**Fast stands leave little warning.** Four to six seconds is what a slow bed exit
+gives. A quick stand out of a chair gives about one second on the synthetic track,
+and 0.1 to 0.4 s on the CDC chair-stand test, which asks for stands as fast as
+possible.
 
 **Heights fail when the feet are not on the floor.** Every height is measured from
 the point where the body meets the floor. On a bed that point is a mattress, and
@@ -519,8 +588,10 @@ modality is needed there.
 measurement; the limitation is that nobody, including this evaluation, can say
 what was missed in those windows.
 
-**The false-alarm rate has a small denominator.** Zero false alarms in 1.21 hours
-of observed quiet is real but it is 1.21 hours. Nothing here is a bed-night.
+**The false-alarm rate has a small denominator.** Zero false alarms in 1.23 hours
+of observed quiet is real but it is 1.23 hours. Nothing here is a bed-night. And
+the synthetic quiet scenarios missed a real false call: every sit-down raised one
+until real footage showed it.
 
 **No outcome evidence exists.** No deployed-system outcome trial could be found
 for any camera safety product in this domain. This has not been shown to reduce
@@ -587,7 +658,7 @@ regulatory route this project does not claim to have.
 uv venv .venv --python 3.13
 uv pip install --python .venv/bin/python -e packages/visioncore -e packages/servicekit -e products/preempt
 products/preempt/models/fetch.sh
-.venv/bin/python -m pytest products/preempt/tests -q          # 102 tests
+.venv/bin/python -m pytest products/preempt/tests -q          # 124 tests
 .venv/bin/python -m preempt.cli evaluate --seeds 5 --quiet-loops 16
 products/preempt/eval/fetch_urfall.sh 12
 .venv/bin/python -m preempt.cli urfall products/preempt/eval/data --room products/preempt/eval/urfall-room.json

@@ -379,6 +379,12 @@ def shadow_if_well_conditioned(
     return shadow
 
 
+SHADOW_GAP_S = 1.0
+"""How long the filter predicts through badly conditioned shadows before the feet
+take over as the torso's floor position. Short gaps are noise in a good view; a
+long run means the camera is at hip height and the shadow will not come back."""
+
+
 class ComTracker:
     """A constant-velocity Kalman filter on the floor-plane centre of mass.
 
@@ -436,6 +442,7 @@ class Kinematics:
     frame: FloorFrame
     thresholds: Thresholds
     tracker: ComTracker = field(default_factory=ComTracker)
+    _last_good_shadow_s: float | None = field(default=None, init=False)
 
     def state(self, pose: PoseFrame) -> BodyState:
         t = self.thresholds
@@ -468,11 +475,22 @@ class Kinematics:
         # measured. Exact once the height is, and the height is only approximate
         # because it assumed the hips were above the feet -- true to a few
         # centimetres when standing, which is the only time this is used.
+        skip_measurement = False
         if hip is not None and out.hip_height is not None:
             shadow = shadow_if_well_conditioned(self.frame, hip, out.hip_height)
             if shadow is not None:
                 out.torso_floor = shadow
-        if out.torso_floor is None:
+                self._last_good_shadow_s = pose.time_s
+            elif (
+                self._last_good_shadow_s is not None
+                and pose.time_s - self._last_good_shadow_s <= SHADOW_GAP_S
+            ):
+                # One badly conditioned frame in a run of good ones. Swapping to
+                # the feet for it would jump the track by the hip-to-feet offset
+                # and read as sway (it did, on UR Fall), so the filter predicts
+                # through it instead.
+                skip_measurement = True
+        if out.torso_floor is None and not skip_measurement:
             out.torso_floor = out.floor_xy
 
         tracked = self.tracker.update(out.torso_floor, pose.time_s)

@@ -17,14 +17,17 @@ and never a photograph. That is a testable claim, not a slogan, and
 
 | | |
 |---|---|
-| Median lead time before the person is upright | **4.60 s** (4.07 to 5.60) |
-| Detection rate, synthetic decision layer | **100 %** (20 of 20) |
-| False alarms in 1.21 hours of observed quiet | **0** |
+| Median lead time before the person is upright, 10 bed exits | **4.60 s** (4.07 to 5.60) |
+| Median lead time, all 15 bed and chair exits | **4.47 s** (0.73 to 5.60) |
+| Detection rate, synthetic decision layer | **100 %** (25 of 25) |
+| False alarms in 1.23 hours of observed quiet | **0** |
+| Real CDC chair-stand footage, hand-set room | **3 of 3** stands called, 0 false calls (was 3) |
 | Fall sequences reaching "on the floor", UR Fall | **10 of 12**, median 0.50 s behind ground truth |
 | Camera bytes written to disk | **0** |
-| Tests | **102**, green |
+| Tests | **124**, green |
 
-Numbers, method and the failures in [docs/evaluation.md](docs/evaluation.md).
+Numbers, method and the failures in [docs/evaluation.md](docs/evaluation.md),
+including the two flaws that real footage found and what fixing them changed.
 
 ---
 
@@ -68,6 +71,20 @@ products/preempt/models/fetch.sh        # 33 MB of Apache-2.0 ONNX, not committe
 .venv/bin/python -m uvicorn preempt.main:app --port 8000
 ```
 
+A video is only as good as the room it is measured against. Upload one with its
+room setup, either as a second file or inside the job params:
+
+```bash
+curl -F file=@ward.mp4 -F room=@my-room.json https://2uhvgzwrwc.us-east-2.awsapprunner.com/api/jobs
+curl -F file=@ward.mp4 -F 'params={"room": {...}}' .../api/jobs
+```
+
+The room is checked by the same parser as `--room`, and a bad one is a 400 that
+names the field. Without one the synthetic ward's room is used, and the result
+says so. `POST /api/rooms/check` validates a room on its own. In the browser, a
+video stops at a preview that draws the room over its first frame before
+anything is sent.
+
 Other commands: `evaluate`, `urfall`, `calibrate`, `bench`, `samples`.
 `python -m preempt.cli --help`.
 
@@ -77,9 +94,12 @@ Other commands: `evaluate`, `urfall`, `calibrate`, `bench`, `samples`.
 .venv/bin/python -m pytest products/preempt/tests -q
 ```
 
-102 tests. The privacy tests run the whole pipeline with the real models over a
+124 tests. The privacy tests run the whole pipeline with the real models over a
 real video file and assert that nothing derived from those pixels was written.
 The pose tests are skipped, loudly, if `models/fetch.sh` has not been run.
+`tests/test_real_footage.py` replays keypoints read from a public-domain CDC
+chair-stand clip (no pixels are in the repository) and fails on the engine
+before the sit-down fix.
 
 ## Deploying
 

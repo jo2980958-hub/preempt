@@ -1,19 +1,20 @@
 {
   "summary": {
-    "source": "synthetic, 10 scenarios x 5 noise seeds, quiet scenarios looped 16x",
-    "sequences": 50,
-    "positives": 20,
-    "negatives": 30,
+    "source": "synthetic, 12 scenarios x 5 noise seeds, quiet scenarios looped 16x",
+    "sequences": 60,
+    "positives": 25,
+    "negatives": 35,
     "detection_rate": 1.0,
     "lead_time_s_bed_and_chair_exits": {
-      "n": 10,
-      "median": 4.6,
-      "mean": 4.69,
-      "min": 4.07,
+      "n": 15,
+      "median": 4.47,
+      "mean": 3.44,
+      "min": 0.73,
       "max": 5.6
     },
     "false_alarms": 0,
-    "quiet_hours_observed": 1.2094,
+    "sit_down_false_calls": 0,
+    "quiet_hours_observed": 1.2289,
     "false_alarms_per_bed_night": 0.0,
     "failures": [],
     "thresholds": {
@@ -65,10 +66,11 @@
       "peak_state": "rising soon",
       "expected_state": "rising soon",
       "lead_time_s": 4.47,
-      "calls": 3,
+      "calls": 2,
       "duration_s": 15.7,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-steady#1",
@@ -80,7 +82,8 @@
       "calls": 4,
       "duration_s": 15.7,
       "correct": true,
-      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable"
+      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-steady#2",
@@ -92,7 +95,8 @@
       "calls": 5,
       "duration_s": 15.7,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-steady#3",
@@ -104,7 +108,8 @@
       "calls": 6,
       "duration_s": 15.7,
       "correct": true,
-      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable"
+      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-steady#4",
@@ -116,7 +121,8 @@
       "calls": 5,
       "duration_s": 15.7,
       "correct": true,
-      "note": "called; reached 'unsteady' rather than 'rising soon', both actionable"
+      "note": "called; reached 'unsteady' rather than 'rising soon', both actionable",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-to-floor#0",
@@ -128,7 +134,8 @@
       "calls": 5,
       "duration_s": 18.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-to-floor#1",
@@ -140,7 +147,8 @@
       "calls": 7,
       "duration_s": 18.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-to-floor#2",
@@ -152,7 +160,8 @@
       "calls": 7,
       "duration_s": 18.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-to-floor#3",
@@ -164,7 +173,8 @@
       "calls": 5,
       "duration_s": 18.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-to-floor#4",
@@ -176,7 +186,8 @@
       "calls": 8,
       "duration_s": 18.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-unsteady#0",
@@ -185,10 +196,11 @@
       "peak_state": "unsteady",
       "expected_state": "rising soon",
       "lead_time_s": 4.53,
-      "calls": 5,
+      "calls": 4,
       "duration_s": 18.5,
       "correct": true,
-      "note": "called; reached 'unsteady' rather than 'rising soon', both actionable"
+      "note": "called; reached 'unsteady' rather than 'rising soon', both actionable",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-unsteady#1",
@@ -200,7 +212,8 @@
       "calls": 7,
       "duration_s": 18.5,
       "correct": true,
-      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable"
+      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-unsteady#2",
@@ -212,7 +225,8 @@
       "calls": 6,
       "duration_s": 18.5,
       "correct": true,
-      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable"
+      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-unsteady#3",
@@ -224,7 +238,8 @@
       "calls": 4,
       "duration_s": 18.5,
       "correct": true,
-      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable"
+      "note": "called; reached 'on the floor' rather than 'rising soon', both actionable",
+      "sit_down_calls": 0
     },
     {
       "name": "bed-exit-unsteady#4",
@@ -236,7 +251,73 @@
       "calls": 4,
       "duration_s": 18.5,
       "correct": true,
-      "note": "called; reached 'unsteady' rather than 'rising soon', both actionable"
+      "note": "called; reached 'unsteady' rather than 'rising soon', both actionable",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "chair-stand-and-sit-back#0",
+      "should_call": true,
+      "called": true,
+      "peak_state": "rising soon",
+      "expected_state": "rising soon",
+      "lead_time_s": 1.0,
+      "calls": 1,
+      "duration_s": 17.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "chair-stand-and-sit-back#1",
+      "should_call": true,
+      "called": true,
+      "peak_state": "rising soon",
+      "expected_state": "rising soon",
+      "lead_time_s": 0.93,
+      "calls": 1,
+      "duration_s": 17.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "chair-stand-and-sit-back#2",
+      "should_call": true,
+      "called": true,
+      "peak_state": "rising soon",
+      "expected_state": "rising soon",
+      "lead_time_s": 1.0,
+      "calls": 1,
+      "duration_s": 17.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "chair-stand-and-sit-back#3",
+      "should_call": true,
+      "called": true,
+      "peak_state": "rising soon",
+      "expected_state": "rising soon",
+      "lead_time_s": 0.73,
+      "calls": 1,
+      "duration_s": 17.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "chair-stand-and-sit-back#4",
+      "should_call": true,
+      "called": true,
+      "peak_state": "rising soon",
+      "expected_state": "rising soon",
+      "lead_time_s": 1.0,
+      "calls": 1,
+      "duration_s": 17.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "curtain-drawn#0",
@@ -248,7 +329,8 @@
       "calls": 0,
       "duration_s": 15.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "curtain-drawn#1",
@@ -260,7 +342,8 @@
       "calls": 0,
       "duration_s": 15.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "curtain-drawn#2",
@@ -272,7 +355,8 @@
       "calls": 0,
       "duration_s": 15.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "curtain-drawn#3",
@@ -284,7 +368,8 @@
       "calls": 0,
       "duration_s": 15.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "curtain-drawn#4",
@@ -296,7 +381,8 @@
       "calls": 0,
       "duration_s": 15.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "personal-care-pause#0",
@@ -308,7 +394,8 @@
       "calls": 0,
       "duration_s": 18.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "personal-care-pause#1",
@@ -320,7 +407,8 @@
       "calls": 0,
       "duration_s": 18.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "personal-care-pause#2",
@@ -332,7 +420,8 @@
       "calls": 0,
       "duration_s": 18.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "personal-care-pause#3",
@@ -344,7 +433,8 @@
       "calls": 0,
       "duration_s": 18.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "personal-care-pause#4",
@@ -356,7 +446,8 @@
       "calls": 0,
       "duration_s": 18.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "sat-up-and-lay-back#0",
@@ -368,7 +459,8 @@
       "calls": 0,
       "duration_s": 249.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "sat-up-and-lay-back#1",
@@ -380,7 +472,8 @@
       "calls": 0,
       "duration_s": 249.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "sat-up-and-lay-back#2",
@@ -392,7 +485,8 @@
       "calls": 0,
       "duration_s": 249.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "sat-up-and-lay-back#3",
@@ -404,7 +498,8 @@
       "calls": 0,
       "duration_s": 249.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "sat-up-and-lay-back#4",
@@ -416,7 +511,8 @@
       "calls": 0,
       "duration_s": 249.5,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "settled-turning-over#0",
@@ -428,7 +524,8 @@
       "calls": 0,
       "duration_s": 244.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "settled-turning-over#1",
@@ -440,7 +537,8 @@
       "calls": 0,
       "duration_s": 244.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "settled-turning-over#2",
@@ -452,7 +550,8 @@
       "calls": 0,
       "duration_s": 244.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "settled-turning-over#3",
@@ -464,7 +563,8 @@
       "calls": 0,
       "duration_s": 244.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "settled-turning-over#4",
@@ -476,7 +576,73 @@
       "calls": 0,
       "duration_s": 244.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "sit-down-in-chair#0",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "watch",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 14.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "sit-down-in-chair#1",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "watch",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 14.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "sit-down-in-chair#2",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "watch",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 14.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "sit-down-in-chair#3",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "watch",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 14.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
+    },
+    {
+      "name": "sit-down-in-chair#4",
+      "should_call": false,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "watch",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 14.1,
+      "correct": true,
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "steady-walk#0",
@@ -488,7 +654,8 @@
       "calls": 0,
       "duration_s": 159.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "steady-walk#1",
@@ -500,7 +667,8 @@
       "calls": 0,
       "duration_s": 159.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "steady-walk#2",
@@ -512,7 +680,8 @@
       "calls": 0,
       "duration_s": 159.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "steady-walk#3",
@@ -524,7 +693,8 @@
       "calls": 0,
       "duration_s": 159.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "steady-walk#4",
@@ -536,7 +706,8 @@
       "calls": 0,
       "duration_s": 159.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "unsteady-walk#0",
@@ -548,7 +719,8 @@
       "calls": 1,
       "duration_s": 7.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "unsteady-walk#1",
@@ -560,7 +732,8 @@
       "calls": 1,
       "duration_s": 7.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "unsteady-walk#2",
@@ -572,7 +745,8 @@
       "calls": 1,
       "duration_s": 7.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "unsteady-walk#3",
@@ -584,7 +758,8 @@
       "calls": 1,
       "duration_s": 7.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "unsteady-walk#4",
@@ -596,7 +771,8 @@
       "calls": 1,
       "duration_s": 7.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "visitor-in-chair#0",
@@ -608,7 +784,8 @@
       "calls": 0,
       "duration_s": 181.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "visitor-in-chair#1",
@@ -620,7 +797,8 @@
       "calls": 0,
       "duration_s": 181.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "visitor-in-chair#2",
@@ -632,7 +810,8 @@
       "calls": 0,
       "duration_s": 181.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "visitor-in-chair#3",
@@ -644,7 +823,8 @@
       "calls": 0,
       "duration_s": 181.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     },
     {
       "name": "visitor-in-chair#4",
@@ -656,7 +836,8 @@
       "calls": 0,
       "duration_s": 181.9,
       "correct": true,
-      "note": ""
+      "note": "",
+      "sit_down_calls": 0
     }
   ]
 }

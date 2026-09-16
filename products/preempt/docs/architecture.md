@@ -166,6 +166,13 @@ sequenceDiagram
     B->>A: GET /api/jobs/{id}/evidence/risk-state.png
 ```
 
-A judge's own video takes the same path and runs YOLOX and RTMPose over it.
+A judge's own video takes the same path and runs YOLOX and RTMPose over it. It can
+bring its own room setup, as a second file part or as `room` in the job params.
+The service validates it before the job exists, so a bad room is a 400 naming the
+field, and records it in the result as `input.room_setup` with whether the
+camera was measured or assumed. Before the upload, the browser draws that room
+over the video's first frame, decoded locally, and `POST /api/rooms/check` runs
+the same validation. Without a room the synthetic ward's default is used, and
+the result says so.
 `/version` reports the OpenCV version, the git sha and the model licences, so
 what ran is checkable rather than asserted.
