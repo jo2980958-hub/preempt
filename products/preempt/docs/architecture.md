@@ -137,7 +137,9 @@ container's `/tmp` and expire with the job.
 
 **us-east-2 rather than us-east-1**, because this account is limited to two App
 Runner services per region and both us-east-1 slots were already taken by other
-work. Recorded in `docs/costs.md`.
+work. Preempt is the only one of the five entries outside us-east-1, so a
+project-wide diagram would show four services in one region and this one in
+another. Recorded in `docs/costs.md`.
 
 ## 4. The request, end to end
 

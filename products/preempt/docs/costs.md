@@ -10,7 +10,7 @@ Everything is tagged `Project=opencv26`. Account <aws-account-id>.
 |---|---|---|---|
 | App Runner service | us-east-2 | `opencv26-preempt` | 2 vCPU, 4 GB, port 8000, always on |
 | ECR repository | us-east-2 | `opencv26/preempt` | 180 MB compressed (651 MB on disk), lifecycle keeps 10 images and expires untagged after a day |
-| ECR repository | us-east-1 | `opencv26/preempt` | the same image, pushed before the region change; kept as a fallback |
+| ECR repository | us-east-1 | `opencv26/preempt` | **one build behind** (digest `13d2594`, no `PREEMPT_WEB_DIR`). Left from the first deploy. Do not deploy from it without re-pushing: it serves the shared shell, not Preempt |
 | IAM role | global | `opencv26-apprunner-ecr-access` | lets App Runner pull from ECR, nothing else |
 | CloudWatch log groups | us-east-2 | `/aws/apprunner/opencv26-preempt/*` | application and service logs |
 
@@ -39,16 +39,22 @@ judging window.
 
 ## Two decisions worth recording
 
-**us-east-2 rather than us-east-1.** The brief said us-east-1. This account is
+**us-east-2 rather than us-east-1, and Preempt is the only one of the five.**
+The brief said us-east-1, and the four sibling entries are there. This account is
 restricted to two App Runner services per region, and both us-east-1 slots were
 already held by other services when this was deployed. The error, verbatim:
 
 > `Account <aws-account-id> is restricted and can support only two App Runner
 > services per region at the moment.`
 
-us-east-2 was the nearest region with a free slot. The ECR image was pushed to
-both regions, because App Runner can only pull a private image from its own
-region.
+us-east-2 was the nearest region with a free slot. So an architecture diagram for
+the project as a whole has four products in us-east-1 and this one in us-east-2;
+the diagram in `architecture.md` shows us-east-2 because that is where this
+service actually runs.
+
+The image was originally pushed to both regions, because App Runner can only pull
+a private image from its own region. Only the us-east-2 copy has been kept current
+since; see the table above.
 
 **2 vCPU and 4 GB rather than the cheapest option.** The image carries two ONNX
 models and runs both per frame on an uploaded video. At 0.25 vCPU a judge's video

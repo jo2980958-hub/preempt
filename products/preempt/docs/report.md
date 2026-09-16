@@ -465,7 +465,14 @@ and what is discarded is all of the identity.
 
 Container to ECR, ECR to App Runner, 2 vCPU and 4 GB, always on, HTTPS with no
 load balancer. `docs/costs.md` has the resources, the rates and the two decisions
-worth recording, including why this is in us-east-2 rather than us-east-1.
+worth recording.
+
+**One of those is worth repeating here, because it makes this entry inconsistent
+with its siblings.** Preempt runs in **us-east-2**; the other four entries in this
+project run in us-east-1. The account is restricted to two App Runner services per
+region and both us-east-1 slots were taken when this was deployed, so us-east-2
+was the nearest region with a free slot. The architecture diagram shows us-east-2
+because that is where the service actually is.
 
 Both ONNX models, seven bundled pose tracks and the default room are inside the
 image, so the endpoint works from a cold start with **no network at runtime**. The
