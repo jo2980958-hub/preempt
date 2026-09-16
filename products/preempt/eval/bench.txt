@@ -1,0 +1,3 @@
+OpenCV 5.0.0, 22 threads
+  ENGINE_CLASSIC  rtmpose-t-body7   9.30 ms   yolox-tiny  44.01 ms
+  ENGINE_NEW      rtmpose-t-body7   7.83 ms   yolox-tiny  27.46 ms

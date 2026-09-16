@@ -1,0 +1,207 @@
+{
+  "room": "side room 4",
+  "bed_name": "bed 4",
+  "floor": {
+    "image_points": [
+      [
+        643.6981565985972,
+        1569.1504436497762
+      ],
+      [
+        1194.2979734994574,
+        466.9553052362713
+      ],
+      [
+        679.377951849497,
+        244.13657519478983
+      ],
+      [
+        72.331913290442,
+        567.6633841821945
+      ]
+    ],
+    "world_points": [
+      [
+        0.2,
+        0.2
+      ],
+      [
+        4.0,
+        0.2
+      ],
+      [
+        4.0,
+        3.4
+      ],
+      [
+        0.2,
+        3.4
+      ]
+    ],
+    "vertical_vanishing_point": [
+      640.0,
+      1372.0724566153585
+    ],
+    "reference_height_m": 1.7,
+    "reference_base_px": [
+      771.0737091277105,
+      608.5570372941086
+    ],
+    "reference_top_px": [
+      840.1353352679262,
+      206.26723568272985
+    ]
+  },
+  "zones": [
+    {
+      "name": "bed 4",
+      "kind": "bed",
+      "points": [
+        [
+          775.7751779770656,
+          1184.5847383005398
+        ],
+        [
+          1145.8401641058244,
+          502.52921824619796
+        ],
+        [
+          908.6032516744274,
+          391.0318157060277
+        ],
+        [
+          470.4836770480367,
+          813.3738283063374
+        ]
+      ]
+    },
+    {
+      "name": "chair",
+      "kind": "chair",
+      "points": [
+        [
+          956.4933591172714,
+          472.3523420266432
+        ],
+        [
+          1015.9275240240004,
+          401.91152493355617
+        ],
+        [
+          893.3696341167463,
+          347.80533917190587
+        ],
+        [
+          827.0110941948262,
+          405.7644912963761
+        ]
+      ]
+    },
+    {
+      "name": "door",
+      "kind": "door",
+      "points": [
+        [
+          143.64698800462128,
+          625.5314940751342
+        ],
+        [
+          356.53954071454723,
+          497.37681843710914
+        ],
+        [
+          302.60549419077006,
+          444.9384636808994
+        ],
+        [
+          99.16724763478419,
+          553.3614210079622
+        ]
+      ]
+    },
+    {
+      "name": "wall",
+      "kind": "wall",
+      "points": [
+        [
+          643.6981565985972,
+          1569.1504436497762
+        ],
+        [
+          729.641842753458,
+          1397.107682011372
+        ],
+        [
+          137.62080584319017,
+          532.867494367888
+        ],
+        [
+          72.331913290442,
+          567.6633841821945
+        ]
+      ]
+    },
+    {
+      "name": "walking frame",
+      "kind": "aid",
+      "points": [
+        [
+          759.6891378356237,
+          357.75404051194255
+        ],
+        [
+          818.2958883848908,
+          314.66219322296234
+        ],
+        [
+          739.1867275858191,
+          279.7375143395224
+        ],
+        [
+          678.7481469457625,
+          317.0869885459367
+        ]
+      ]
+    }
+  ],
+  "thresholds": {
+    "keypoint_score_min": 0.3,
+    "pose_keypoints_min": 6,
+    "trunk_upright_deg": 45.0,
+    "edge_margin_m": 0.25,
+    "transfer_rate_per_s": 0.18,
+    "transfer_delta": 0.16,
+    "lean_over_feet": -0.32,
+    "rise_hip_speed_mps": 0.25,
+    "stand_hip_height_m": 0.78,
+    "prepare_hold_s": 0.4,
+    "prepare_grace_s": 0.35,
+    "gait_window_s": 4.0,
+    "gait_min_steps": 4,
+    "sway_rms_warn_cm": 4.5,
+    "sway_rms_high_cm": 9.0,
+    "step_time_cv_warn": 0.12,
+    "step_time_cv_high": 0.28,
+    "halting_step_ratio": 1.8,
+    "wall_reach_m": 0.45,
+    "wall_reach_hold_s": 0.6,
+    "gait_unsteady_score": 0.55,
+    "floor_head_height_m": 0.6,
+    "floor_spread_min_m": 0.8,
+    "floor_hold_s": 0.8,
+    "floor_consistency_min": 0.92,
+    "corridor_width_m": 0.9,
+    "clutter_area_cm2": 400.0,
+    "aid_reach_m": 0.75,
+    "dark_mean_v": 28.0,
+    "dark_low_bin_fraction": 0.92,
+    "blocked_laplacian_var": 12.0,
+    "camera_moved_px": 18.0,
+    "absent_s": 6.0,
+    "nudge_to_station_s": 20.0,
+    "acknowledge_cooldown_s": 90.0
+  },
+  "privacy_mode": "strict",
+  "fps_hint": 0.0,
+  "notes": "Default room shipped with the image. A real ward replaces this with its own four floor points, its own zones and its own vertical reference; see docs/report.md."
+}

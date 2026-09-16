@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# 33 MB of Apache-2.0 ONNX, fetched by products/preempt/models/fetch.sh
+products/preempt/models/*.onnx
+products/preempt/models/*.zip
+
+# UR Fall Detection Dataset: CC BY-NC-SA 4.0, non-commercial academic use.
+# Fetched by products/preempt/eval/fetch_urfall.sh and never committed.
+products/preempt/eval/data/

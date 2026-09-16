@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{PRODUCT_TITLE}} — {{PRODUCT_TAGLINE}}</title>
+<meta name="description" content="A camera that raises a call before a fall, not after. Nothing recognisable leaves the room.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/app.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect width='26' height='26' rx='7' fill='%233B3390'/%3E%3Ccircle cx='13' cy='8' r='2.6' stroke='white' stroke-width='1.7' fill='none'/%3E%3Cpath d='M13 11.4v6M13 13.6L9.2 16M13 13.6L16.8 16M13 17.4L10 21.4M13 17.4L16 21.4' stroke='white' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the results</a>
+
+<!-- Patterns and glyphs used by the drawn figure and the state ribbon. -->
+<svg width="0" height="0" class="defs" aria-hidden="true" focusable="false"><defs>
+  <pattern id="pt-weave" width="14" height="14" patternUnits="userSpaceOnUse">
+    <rect width="14" height="14" fill="var(--weave-bg)"/>
+    <path d="M0 14L14 0" stroke="var(--weave-line)" stroke-width="1"/>
+  </pattern>
+  <pattern id="pt-diag" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <rect width="7" height="7" fill="none"/>
+    <path d="M0 0v7" stroke="currentColor" stroke-width="2.4" opacity=".55"/>
+  </pattern>
+  <pattern id="pt-dots" width="6" height="6" patternUnits="userSpaceOnUse">
+    <circle cx="1.6" cy="1.6" r="1.1" fill="currentColor" opacity=".5"/>
+  </pattern>
+  <pattern id="pt-rule" width="6" height="6" patternUnits="userSpaceOnUse">
+    <path d="M1 0v6" stroke="currentColor" stroke-width="1.6" opacity=".6"/>
+  </pattern>
+</defs></svg>
+
+<div class="app">
+
+  <!-- ══════════════ the rail ══════════════ -->
+  <aside class="rail">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+        <rect width="26" height="26" rx="7" fill="var(--accent)"/>
+        <circle cx="13" cy="8" r="2.6" stroke="var(--accent-fg)" stroke-width="1.7"/>
+        <path d="M13 11.4v6M13 13.6L9.2 16M13 13.6L16.8 16M13 17.4L10 21.4M13 17.4L16 21.4"
+              stroke="var(--accent-fg)" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      <div><b>{{PRODUCT_TITLE}}</b><small>{{PRODUCT_TAGLINE}}</small></div>
+    </div>
+
+    <button class="primary" id="start" data-demo="start" type="button">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M4.4 3.2l8 4.8-8 4.8z" fill="currentColor"/>
+      </svg>
+      <span id="start-label">Watch this room</span>
+    </button>
+    <p class="rail-note" id="start-note">bed-exit-steady, 15.7 s of pose track</p>
+
+    <nav class="nav" id="nav" aria-label="Sections of this run">
+      <a href="#sec-room" data-count-key="keypoints">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1.6" y="5" width="12.8" height="7" rx="1.6" stroke="currentColor" stroke-width="1.5"/><path d="M1.6 8.6h12.8M4.6 5V3.4h4V5" stroke="currentColor" stroke-width="1.4"/></svg>
+        The room<span class="ct" data-count="keypoints">—</span></a>
+      <a href="#sec-risk" data-count-key="state">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 11l3-5 3 3 2.4-4L14 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Movement<span class="ct" data-count="movement">—</span></a>
+      <a href="#sec-calls">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.4 12.6a4.6 4.6 0 019.2 0z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="5" r="2.2" stroke="currentColor" stroke-width="1.5"/></svg>
+        Calls<span class="ct" data-count="calls">—</span></a>
+      <a href="#sec-hazards">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2.2l6 11H2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.4v3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".9" fill="currentColor"/></svg>
+        Hazards<span class="ct" data-count="hazards">—</span></a>
+      <hr>
+      <a href="#sec-privacy">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.8l5.4 2.4v4c0 3.3-2.3 5.5-5.4 6.2C4.9 13.7 2.6 11.5 2.6 8.2v-4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M5.8 8l1.6 1.6L10.4 6.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Privacy ledger<span class="ct" data-count="bytes">—</span></a>
+      <a href="#sec-view">
+        <svg class="ic" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.4 8S3.9 3.6 8 3.6 14.6 8 14.6 8 12.1 12.4 8 12.4 1.4 8 1.4 8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/></svg>
+        What it could see<span class="ct" data-count="view">—</span></a>
+    </nav>
+
+    <div class="railfoot">
+      <div class="rr"><span>Images stored</span><b class="is-ok" id="f-stored">0</b></div>
+      <div class="rr"><span>Images transmitted</span><b class="is-ok" id="f-sent">0</b></div>
+      <div class="rr"><span>Keypoints kept</span><b id="f-kept">—</b></div>
+      <div class="rr"><span>Frames processed</span><b id="f-frames">—</b></div>
+      <div class="rr"><span>Engine</span><b id="f-engine">RTMPose-t</b></div>
+      <div class="rr"><span>OpenCV</span><b id="f-opencv">—</b></div>
+      <button class="theme" id="theme" type="button" aria-pressed="false">
+        <span id="theme-label">Dim the screen</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══════════════ the main column ══════════════ -->
+  <div class="main" id="main">
+    <div class="topbar">
+      <span class="crumb"><span class="dot" id="crumb-dot"></span><span id="crumb">No room yet</span></span>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <span class="tb-item" id="tb-source">Nothing has been watched yet</span>
+      <span class="tb-right">
+        <span class="chip ok" id="tb-privacy">Nothing recognisable leaves this room</span>
+        <span class="status" data-demo="status" id="status" role="status" aria-live="polite">Ready</span>
+      </span>
+    </div>
+
+    <div class="page">
+      <header class="pagehead">
+        <div>
+          <h1 id="title">A call before the fall</h1>
+          <p id="subtitle">Pick a room below. Preempt reads the movement that comes before someone stands up, scores how steady they are once they are on their feet, and calls while the person is still standing.</p>
+        </div>
+      </header>
+
+      <div class="progress" id="progress" hidden>
+        <div class="progress-top">
+          <h2>Watching the recording</h2>
+          <span class="progress-pct mono" id="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar"><i id="progress-fill"></i></div>
+        <p class="progress-msg" id="progress-msg">Starting</p>
+        <p class="progress-foot">Each frame is graded, posed and then destroyed before the next
+          one is decoded. Nothing is written to disk but the drawings you will see below.</p>
+      </div>
+
+      <section class="picker" id="picker" data-demo="sample-picker" aria-labelledby="picker-h">
+        <div class="picker-head">
+          <h2 id="picker-h">Seven recorded rooms</h2>
+          <p>Every sample is a pose track, not a video. A ward would never let us ship footage of a patient, so we ship what the device actually keeps: seventeen coordinates per frame.</p>
+        </div>
+        <div class="samples" id="samples">
+          <p class="loading">Loading the samples…</p>
+        </div>
+        <div class="upload">
+          <label for="file">Or watch your own video</label>
+          <input type="file" id="file" data-demo="file-input" accept="video/*,.json">
+          <p class="upload-note" id="upload-note">The frames are read, the pose is taken, and each frame is destroyed before the next one is decoded.</p>
+        </div>
+      </section>
+
+      <section class="results" id="results" data-demo="result" hidden></section>
+
+      <p class="empty" id="empty">
+        <b>Nothing has been watched yet.</b>
+        Choose <i>bed-exit-steady</i> to see the whole loop in about fifteen seconds of recorded movement.
+      </p>
+
+      <footer class="foot">
+        <span><b>684,000 people die from falls each year</b> and 37.3 million more need medical attention for one.</span>
+        <span class="foot-right">WHO falls fact sheet</span>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,634 @@
+{
+  "summary": {
+    "source": "UR Fall Detection Dataset (cam0 RGB)",
+    "sequences": 21,
+    "positives": 12,
+    "negatives": 9,
+    "detection_rate": 0.917,
+    "lead_time_s_bed_and_chair_exits": {
+      "n": 0,
+      "median": null,
+      "mean": null,
+      "min": null,
+      "max": null
+    },
+    "false_alarms": 9,
+    "quiet_hours_observed": 0.0173,
+    "false_alarms_per_bed_night": 6237.43,
+    "failures": [
+      {
+        "name": "adl-01",
+        "should_call": false,
+        "called": true,
+        "peak_state": "on the floor",
+        "expected_state": "",
+        "lead_time_s": 1.0,
+        "calls": 3,
+        "duration_s": 5.0,
+        "correct": false,
+        "note": "on-the-floor state on an activity-of-daily-living sequence"
+      },
+      {
+        "name": "adl-02",
+        "should_call": false,
+        "called": true,
+        "peak_state": "on the floor",
+        "expected_state": "",
+        "lead_time_s": 1.53,
+        "calls": 2,
+        "duration_s": 6.0,
+        "correct": false,
+        "note": "on-the-floor state on an activity-of-daily-living sequence"
+      },
+      {
+        "name": "adl-10",
+        "should_call": false,
+        "called": true,
+        "peak_state": "on the floor",
+        "expected_state": "",
+        "lead_time_s": 1.1,
+        "calls": 6,
+        "duration_s": 10.0,
+        "correct": false,
+        "note": "on-the-floor state on an activity-of-daily-living sequence"
+      },
+      {
+        "name": "adl-11",
+        "should_call": false,
+        "called": true,
+        "peak_state": "on the floor",
+        "expected_state": "",
+        "lead_time_s": 0.03,
+        "calls": 3,
+        "duration_s": 10.0,
+        "correct": false,
+        "note": "on-the-floor state on an activity-of-daily-living sequence"
+      },
+      {
+        "name": "fall-01",
+        "should_call": true,
+        "called": false,
+        "peak_state": "watch",
+        "expected_state": "on the floor",
+        "lead_time_s": null,
+        "calls": 0,
+        "duration_s": 5.3,
+        "correct": false,
+        "note": "no on-the-floor state on a fall sequence"
+      },
+      {
+        "name": "fall-03",
+        "should_call": true,
+        "called": true,
+        "peak_state": "unsteady",
+        "expected_state": "on the floor",
+        "lead_time_s": 0.03,
+        "calls": 1,
+        "duration_s": 7.2,
+        "correct": false,
+        "note": "no on-the-floor state on a fall sequence"
+      }
+    ],
+    "licence": "UR Fall Detection Dataset, Kwolek and Kepski, University of Rzeszow. Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International, intended for non-commercial academic use. Downloaded at evaluation time; no frame or derived image from it is committed to this repository.",
+    "per_sequence": [
+      {
+        "sequence": "adl-01",
+        "frames": 150,
+        "is_fall": false,
+        "ground_truth_on_floor_s": null,
+        "detected_on_floor_s": 4.83,
+        "delay_s": null,
+        "peak_state": "on the floor",
+        "calls": [
+          "nudge",
+          "station",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "adl-02",
+        "frames": 180,
+        "is_fall": false,
+        "ground_truth_on_floor_s": null,
+        "detected_on_floor_s": 5.33,
+        "delay_s": null,
+        "peak_state": "on the floor",
+        "calls": [
+          "nudge",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "adl-03",
+        "frames": 180,
+        "is_fall": false,
+        "ground_truth_on_floor_s": null,
+        "detected_on_floor_s": null,
+        "delay_s": null,
+        "peak_state": "unsteady",
+        "calls": [
+          "nudge",
+          "station"
+        ]
+      },
+      {
+        "sequence": "adl-07",
+        "frames": 180,
+        "is_fall": false,
+        "ground_truth_on_floor_s": null,
+        "detected_on_floor_s": null,
+        "delay_s": null,
+        "peak_state": "rising soon",
+        "calls": [
+          "nudge"
+        ]
+      },
+      {
+        "sequence": "adl-08",
+        "frames": 180,
+        "is_fall": false,
+        "ground_truth_on_floor_s": null,
+        "detected_on_floor_s": null,
+        "delay_s": null,
+        "peak_state": "rising soon",
+        "calls": [
+          "nudge"
+        ]
+      },
+      {
+        "sequence": "adl-09",
+        "frames": 150,
+        "is_fall": false,
+        "ground_truth_on_floor_s": null,
+        "detected_on_floor_s": null,
+        "delay_s": null,
+        "peak_state": "unsteady",
+        "calls": [
+          "station"
+        ]
+      },
+      {
+        "sequence": "adl-10",
+        "frames": 300,
+        "is_fall": false,
+        "ground_truth_on_floor_s": 6.63,
+        "detected_on_floor_s": 7.6,
+        "delay_s": 0.97,
+        "peak_state": "on the floor",
+        "calls": [
+          "nudge",
+          "station",
+          "station",
+          "urgent",
+          "urgent",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "adl-11",
+        "frames": 300,
+        "is_fall": false,
+        "ground_truth_on_floor_s": 6.63,
+        "detected_on_floor_s": 7.33,
+        "delay_s": 0.7,
+        "peak_state": "on the floor",
+        "calls": [
+          "station",
+          "urgent",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "adl-12",
+        "frames": 250,
+        "is_fall": false,
+        "ground_truth_on_floor_s": null,
+        "detected_on_floor_s": null,
+        "delay_s": null,
+        "peak_state": "unsteady",
+        "calls": [
+          "station"
+        ]
+      },
+      {
+        "sequence": "fall-01",
+        "frames": 160,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 3.73,
+        "detected_on_floor_s": null,
+        "delay_s": null,
+        "peak_state": "watch",
+        "calls": []
+      },
+      {
+        "sequence": "fall-02",
+        "frames": 110,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 2.3,
+        "detected_on_floor_s": 2.97,
+        "delay_s": 0.67,
+        "peak_state": "on the floor",
+        "calls": [
+          "nudge",
+          "nudge",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "fall-03",
+        "frames": 215,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 5.9,
+        "detected_on_floor_s": null,
+        "delay_s": null,
+        "peak_state": "unsteady",
+        "calls": [
+          "station"
+        ]
+      },
+      {
+        "sequence": "fall-04",
+        "frames": 96,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 1.43,
+        "detected_on_floor_s": 1.8,
+        "delay_s": 0.37,
+        "peak_state": "on the floor",
+        "calls": [
+          "nudge",
+          "nudge",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "fall-05",
+        "frames": 151,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 3.6,
+        "detected_on_floor_s": 4.03,
+        "delay_s": 0.43,
+        "peak_state": "on the floor",
+        "calls": [
+          "nudge",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "fall-06",
+        "frames": 100,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 1.33,
+        "detected_on_floor_s": 2.1,
+        "delay_s": 0.77,
+        "peak_state": "on the floor",
+        "calls": [
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "fall-07",
+        "frames": 156,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 3.8,
+        "detected_on_floor_s": 4.33,
+        "delay_s": 0.53,
+        "peak_state": "on the floor",
+        "calls": [
+          "urgent",
+          "urgent",
+          "urgent",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "fall-08",
+        "frames": 91,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 1.97,
+        "detected_on_floor_s": 2.2,
+        "delay_s": 0.23,
+        "peak_state": "on the floor",
+        "calls": [
+          "urgent",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "fall-09",
+        "frames": 185,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 5.0,
+        "detected_on_floor_s": 5.47,
+        "delay_s": 0.47,
+        "peak_state": "on the floor",
+        "calls": [
+          "station",
+          "nudge",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "fall-10",
+        "frames": 130,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 2.3,
+        "detected_on_floor_s": 2.43,
+        "delay_s": 0.13,
+        "peak_state": "on the floor",
+        "calls": [
+          "urgent",
+          "urgent",
+          "nudge",
+          "nudge",
+          "nudge"
+        ]
+      },
+      {
+        "sequence": "fall-11",
+        "frames": 130,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 2.6,
+        "detected_on_floor_s": 3.17,
+        "delay_s": 0.57,
+        "peak_state": "on the floor",
+        "calls": [
+          "urgent",
+          "urgent"
+        ]
+      },
+      {
+        "sequence": "fall-12",
+        "frames": 110,
+        "is_fall": true,
+        "ground_truth_on_floor_s": 1.8,
+        "detected_on_floor_s": 2.23,
+        "delay_s": 0.43,
+        "peak_state": "on the floor",
+        "calls": [
+          "urgent"
+        ]
+      }
+    ],
+    "detection_delay_s": {
+      "n": 12,
+      "median": 0.5,
+      "mean": 0.52,
+      "min": 0.13,
+      "max": 0.97
+    }
+  },
+  "outcomes": [
+    {
+      "name": "adl-01",
+      "should_call": false,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "",
+      "lead_time_s": 1.0,
+      "calls": 3,
+      "duration_s": 5.0,
+      "correct": false,
+      "note": "on-the-floor state on an activity-of-daily-living sequence"
+    },
+    {
+      "name": "adl-02",
+      "should_call": false,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "",
+      "lead_time_s": 1.53,
+      "calls": 2,
+      "duration_s": 6.0,
+      "correct": false,
+      "note": "on-the-floor state on an activity-of-daily-living sequence"
+    },
+    {
+      "name": "adl-03",
+      "should_call": false,
+      "called": true,
+      "peak_state": "unsteady",
+      "expected_state": "",
+      "lead_time_s": 1.0,
+      "calls": 2,
+      "duration_s": 6.0,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "adl-07",
+      "should_call": false,
+      "called": true,
+      "peak_state": "rising soon",
+      "expected_state": "",
+      "lead_time_s": 1.1,
+      "calls": 1,
+      "duration_s": 6.0,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "adl-08",
+      "should_call": false,
+      "called": true,
+      "peak_state": "rising soon",
+      "expected_state": "",
+      "lead_time_s": 1.5,
+      "calls": 1,
+      "duration_s": 6.0,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "adl-09",
+      "should_call": false,
+      "called": true,
+      "peak_state": "unsteady",
+      "expected_state": "",
+      "lead_time_s": 0.03,
+      "calls": 1,
+      "duration_s": 5.0,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "adl-10",
+      "should_call": false,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "",
+      "lead_time_s": 1.1,
+      "calls": 6,
+      "duration_s": 10.0,
+      "correct": false,
+      "note": "on-the-floor state on an activity-of-daily-living sequence"
+    },
+    {
+      "name": "adl-11",
+      "should_call": false,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "",
+      "lead_time_s": 0.03,
+      "calls": 3,
+      "duration_s": 10.0,
+      "correct": false,
+      "note": "on-the-floor state on an activity-of-daily-living sequence"
+    },
+    {
+      "name": "adl-12",
+      "should_call": false,
+      "called": true,
+      "peak_state": "unsteady",
+      "expected_state": "",
+      "lead_time_s": 0.03,
+      "calls": 1,
+      "duration_s": 8.3,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-01",
+      "should_call": true,
+      "called": false,
+      "peak_state": "watch",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 0,
+      "duration_s": 5.3,
+      "correct": false,
+      "note": "no on-the-floor state on a fall sequence"
+    },
+    {
+      "name": "fall-02",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 3,
+      "duration_s": 3.7,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-03",
+      "should_call": true,
+      "called": true,
+      "peak_state": "unsteady",
+      "expected_state": "on the floor",
+      "lead_time_s": 0.03,
+      "calls": 1,
+      "duration_s": 7.2,
+      "correct": false,
+      "note": "no on-the-floor state on a fall sequence"
+    },
+    {
+      "name": "fall-04",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 3,
+      "duration_s": 3.2,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-05",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 2,
+      "duration_s": 5.0,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-06",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 1,
+      "duration_s": 3.3,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-07",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 4,
+      "duration_s": 5.2,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-08",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 2,
+      "duration_s": 3.0,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-09",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": 0.03,
+      "calls": 3,
+      "duration_s": 6.2,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-10",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 5,
+      "duration_s": 4.3,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-11",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 2,
+      "duration_s": 4.3,
+      "correct": true,
+      "note": ""
+    },
+    {
+      "name": "fall-12",
+      "should_call": true,
+      "called": true,
+      "peak_state": "on the floor",
+      "expected_state": "on the floor",
+      "lead_time_s": null,
+      "calls": 1,
+      "duration_s": 3.7,
+      "correct": true,
+      "note": ""
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "file": "bed-exit-steady.json",
+    "name": "bed-exit-steady",
+    "description": "A patient gets out of bed unaided and walks steadily to the door.",
+    "duration_s": 15.7
+  },
+  {
+    "file": "bed-exit-unsteady.json",
+    "name": "bed-exit-unsteady",
+    "description": "The same exit, but the walk that follows is wide and irregular.",
+    "duration_s": 18.6
+  },
+  {
+    "file": "bed-exit-to-floor.json",
+    "name": "bed-exit-to-floor",
+    "description": "The exit is not caught in time and the patient ends up on the floor.",
+    "duration_s": 18.9
+  },
+  {
+    "file": "settled-turning-over.json",
+    "name": "settled-turning-over",
+    "description": "A patient asleep in bed who turns over twice. No call should be raised.",
+    "duration_s": 20.0
+  },
+  {
+    "file": "visitor-in-chair.json",
+    "name": "visitor-in-chair",
+    "description": "Someone sits in the chair and shifts position without getting up.",
+    "duration_s": 17.0
+  },
+  {
+    "file": "unsteady-walk.json",
+    "name": "unsteady-walk",
+    "description": "A patient crosses the room swaying widely with uneven steps.",
+    "duration_s": 8.0
+  },
+  {
+    "file": "curtain-drawn.json",
+    "name": "curtain-drawn",
+    "description": "A curtain is pulled across the lens while the patient is sitting up. The product must say it cannot see.",
+    "duration_s": 16.0
+  }
+]

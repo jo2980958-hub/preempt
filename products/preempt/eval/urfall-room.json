@@ -1,0 +1,96 @@
+{
+  "room": "UR Fall cam0",
+  "bed_name": "bed",
+  "floor": {
+    "image_points": [
+      [
+        135.45207743994817,
+        243.2545512923978
+      ],
+      [
+        572.1969003057932,
+        192.77813094109686
+      ],
+      [
+        1256.548013455551,
+        950.7595153133982
+      ],
+      [
+        -274.03722811098436,
+        975.0571878850258
+      ]
+    ],
+    "world_points": [
+      [
+        -2.0,
+        -2.0
+      ],
+      [
+        2.0,
+        -2.0
+      ],
+      [
+        2.0,
+        2.0
+      ],
+      [
+        -2.0,
+        2.0
+      ]
+    ],
+    "vertical_vanishing_point": [
+      452.4543565865296,
+      1084.0437485339303
+    ],
+    "reference_height_m": 1.7,
+    "reference_base_px": [
+      362.5554458347538,
+      386.57570278658955
+    ],
+    "reference_top_px": [
+      326.1778617195689,
+      104.34533659356758
+    ]
+  },
+  "zones": [],
+  "thresholds": {
+    "keypoint_score_min": 0.3,
+    "pose_keypoints_min": 6,
+    "trunk_upright_deg": 45.0,
+    "edge_margin_m": 0.25,
+    "transfer_rate_per_s": 0.18,
+    "transfer_delta": 0.16,
+    "lean_over_feet": -0.32,
+    "rise_hip_speed_mps": 0.25,
+    "stand_hip_height_m": 0.78,
+    "prepare_hold_s": 0.4,
+    "prepare_grace_s": 0.35,
+    "gait_window_s": 4.0,
+    "gait_min_steps": 4,
+    "sway_rms_warn_cm": 4.5,
+    "sway_rms_high_cm": 9.0,
+    "step_time_cv_warn": 0.12,
+    "step_time_cv_high": 0.28,
+    "halting_step_ratio": 1.8,
+    "wall_reach_m": 0.45,
+    "wall_reach_hold_s": 0.6,
+    "gait_unsteady_score": 0.55,
+    "floor_head_height_m": 0.6,
+    "floor_spread_min_m": 0.8,
+    "floor_hold_s": 0.8,
+    "floor_consistency_min": 0.92,
+    "corridor_width_m": 0.9,
+    "clutter_area_cm2": 400.0,
+    "aid_reach_m": 0.75,
+    "dark_mean_v": 28.0,
+    "dark_low_bin_fraction": 0.92,
+    "blocked_laplacian_var": 12.0,
+    "camera_moved_px": 18.0,
+    "absent_s": 6.0,
+    "nudge_to_station_s": 20.0,
+    "acknowledge_cooldown_s": 90.0
+  },
+  "privacy_mode": "strict",
+  "fps_hint": 0.0,
+  "notes": "Calibrated from people walking in the room rather than from measured floor points. the person used for scale is 1.78 m tall from the floor to the crown; every height scales with that number; square pixels, no skew, and the principal point at the image centre; the floor is flat and level; the camera is not rolled, if the level-horizon search was used"
+}
