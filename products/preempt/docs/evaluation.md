@@ -265,9 +265,15 @@ press Watch. With the default room on the oblique clip, the preview shows the
 bed zone lying across the chair and her feet, and warns that 5 of 24 setup points
 fall outside the frame, before any analysis runs.
 
-The oblique hand-setup room, uploaded to the redeployed service with this clip,
-gives the same three calls at the same times as the CLI. The next subsection
-has the live result.
+**Checked on the live service** (git sha `9a1565a`, us-east-2). The oblique
+clip, uploaded with its hand-set chair-zone room, gave three `nudge` calls at
+1.00, 4.75 and 8.92 s with the same reasons, a first lead of 0.08 s, 0 of 40
+upright readings as walking, and 0 camera bytes written. The per-frame state
+timeline is identical to the local CLI's. `input.room_setup` records the room as
+uploaded, with camera height and focal length assumed. The same clip with no
+room is recorded as measured against `side room 4` (default) and raises no call.
+A room with three floor points is refused with `400 invalid room setup,
+floor.image_points: needs exactly 4 points, got 3`.
 
 ### Flaw 2: sitting down raised a call to get up
 
