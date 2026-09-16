@@ -66,7 +66,9 @@ class Hazard:
             "kind": self.kind,
             "description": self.description,
             "floor_xy": (
-                None if self.floor_xy is None else [round(self.floor_xy[0], 2), round(self.floor_xy[1], 2)]
+                None
+                if self.floor_xy is None
+                else [round(self.floor_xy[0], 2), round(self.floor_xy[1], 2)]
             ),
             "metres": None if self.metres is None else round(self.metres, 2),
             "area_cm2": None if self.area_cm2 is None else round(self.area_cm2, 0),
@@ -108,9 +110,7 @@ def _in_corridor(corridor: np.ndarray | None, point: np.ndarray) -> bool:
     if corridor is None or np.isnan(point).any():
         return False
     return (
-        cv2.pointPolygonTest(
-            corridor.astype(np.float32), (float(point[0]), float(point[1])), False
-        )
+        cv2.pointPolygonTest(corridor.astype(np.float32), (float(point[0]), float(point[1])), False)
         >= 0
     )
 
@@ -137,11 +137,11 @@ def find_clutter(
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
     if person_box is not None:
-        x1, y1, x2, y2 = (int(round(v)) for v in person_box)
+        x1, y1, x2, y2 = (round(v) for v in person_box)
         pad = 24
         mask[max(0, y1 - pad) : y2 + pad, max(0, x1 - pad) : x2 + pad] = 0
 
-    count, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, 8)
+    count, labels, stats, _centroids = cv2.connectedComponentsWithStats(mask, 8)
     hazards: list[Hazard] = []
     for i in range(1, count):
         if stats[i, cv2.CC_STAT_AREA] < 150:
@@ -202,7 +202,9 @@ def find_wet_floor_sign(
         hazards.append(
             Hazard(
                 kind=WET_FLOOR,
-                description="a wet floor sign is standing on the route between the bed and the door",
+                description=(
+                    "a wet floor sign is standing on the route between the bed and the door"
+                ),
                 floor_xy=(float(base[0]), float(base[1])),
                 confidence=float(min(0.9, 0.5 + solidity / 3.0)),
             )
@@ -301,14 +303,21 @@ class HazardScanner:
         person_box: tuple[float, float, float, float] | None = None,
         force: bool = False,
     ) -> HazardReport:
-        if not force and self._last_scan_s is not None:
-            if time_s - self._last_scan_s < self.interval_s:
-                return self.last
+        if (
+            not force
+            and self._last_scan_s is not None
+            and time_s - self._last_scan_s < self.interval_s
+        ):
+            return self.last
         self._last_scan_s = time_s
 
         corridor = self.corridor()
         report = HazardReport()
-        report.corridor = [] if corridor is None else [[round(float(x), 2), round(float(y), 2)] for x, y in corridor]
+        report.corridor = (
+            []
+            if corridor is None
+            else [[round(float(x), 2), round(float(y), 2)] for x, y in corridor]
+        )
 
         if corridor is None:
             report.skipped.append(
@@ -324,7 +333,11 @@ class HazardScanner:
             else:
                 report.hazards.extend(
                     find_clutter(
-                        image, self.reference, self.frame, corridor, self.t,
+                        image,
+                        self.reference,
+                        self.frame,
+                        corridor,
+                        self.t,
                         person_box=person_box,
                     )
                 )

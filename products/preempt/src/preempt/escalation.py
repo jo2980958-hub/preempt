@@ -205,10 +205,9 @@ class EscalationLadder:
         return {
             "calls": [c.to_dict() for c in self.calls],
             "highest_rung": max(
-                (c.rung for c in self.calls if c.rung in RUNGS), key=lambda r: RUNG_RANK[r],
+                (c.rung for c in self.calls if c.rung in RUNGS),
+                key=lambda r: RUNG_RANK[r],
                 default=NONE,
             ),
-            "first_call_s": (
-                round(self.first_call().time_s, 3) if self.first_call() else None
-            ),
+            "first_call_s": (round(self.first_call().time_s, 3) if self.first_call() else None),
         }

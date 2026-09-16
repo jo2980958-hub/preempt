@@ -3,7 +3,7 @@
 import { esc, has } from './format.js';
 import { pick, roomPanel } from './room.js';
 import { wireLedger, wireTimeline } from './scrub.js';
-import { riskPanel, callsPanel, hazardsPanel } from './panels.js';
+import { riskPanel, callsPanel, hazardsPanel, setupPanel } from './panels.js';
 import { ledgerPanel, artefactsPanel, viewPanel, evidencePanel } from './privacy.js';
 
 export function kpis(record) {
@@ -50,6 +50,7 @@ export function renderResults(root, record, jobId) {
 
   root.innerHTML = `
     ${kpis(record)}
+    ${setupPanel(record)}
     ${heldBack(record)}
     ${blind ? view : ''}
     <div class="cols">

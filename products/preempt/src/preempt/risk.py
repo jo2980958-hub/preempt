@@ -27,11 +27,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from . import view as view_module
 from .config import Thresholds
 from .exits import ON_FLOOR, PREPARING, RISING, STANDING, WALKING, ExitReading
 from .gait import GaitReport
 from .hazards import HazardReport
-from . import view as view_module
 from .view import ViewReport
 
 SETTLED = "settled"
@@ -145,18 +145,22 @@ def assess(
             certainty="measured on the floor plane",
         )
 
-    if posture in (STANDING, WALKING) and gait is not None and gait.scored:
-        if gait.score >= thresholds.gait_unsteady_score:
-            return RiskState(
-                time_s=time_s,
-                state=UNSTEADY,
-                headline=HEADLINE[UNSTEADY],
-                reasons=gait.reasons,
-                hazard_reasons=hazard_reasons,
-                posture=posture,
-                gait_score=gait.score,
-                certainty=f"scored over {thresholds.gait_window_s:.0f} s of walking",
-            )
+    if (
+        posture in (STANDING, WALKING)
+        and gait is not None
+        and gait.scored
+        and gait.score >= thresholds.gait_unsteady_score
+    ):
+        return RiskState(
+            time_s=time_s,
+            state=UNSTEADY,
+            headline=HEADLINE[UNSTEADY],
+            reasons=gait.reasons,
+            hazard_reasons=hazard_reasons,
+            posture=posture,
+            gait_score=gait.score,
+            certainty=f"scored over {thresholds.gait_window_s:.0f} s of walking",
+        )
 
     if posture in (PREPARING, RISING):
         context = (

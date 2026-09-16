@@ -23,11 +23,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import Request
+from fastapi import File, Form, Request, UploadFile
+from fastapi.routing import APIRoute
 from servicekit import JobContext, ProductInfo, ServiceConfig, ServiceError, create_app
 from visioncore import RunRecord
 
-from .config import RoomConfig
+from .config import RoomConfig, RoomError, parse_room
 from .pipeline import PRODUCT, analyse_track, analyse_video
 from .pose import RTMPOSE_T
 from .privacy import PrivacyViolation
@@ -81,7 +82,9 @@ def sample_path(name: str) -> Path:
         safe += ".json"
     path = SAMPLES_DIR / safe
     if not path.is_file() or path.name == "index.json":
-        raise ServiceError("NOT_FOUND", f"no bundled sample {name!r}", known=[s["name"] for s in samples()])
+        raise ServiceError(
+            "NOT_FOUND", f"no bundled sample {name!r}", known=[s["name"] for s in samples()]
+        )
     return path
 
 
@@ -93,10 +96,10 @@ def analyze(ctx: JobContext) -> RunRecord:
         if suffix == ".json":
             record, _ = analyse_track(ctx.input_path, sink=ctx, progress=ctx.progress)
         else:
-            room = _room()
-            ctx.note(f"using the room setup for {room.room}")
+            room, source = job_room(ctx.params)
+            ctx.note(f"measuring against the room setup {room.room!r} ({source})")
             record, _ = analyse_video(
-                ctx.input_path, room, sink=ctx, progress=ctx.progress
+                ctx.input_path, room, sink=ctx, progress=ctx.progress, room_source=source
             )
     except PrivacyViolation as exc:
         raise ServiceError("ANALYSIS_FAILED", f"privacy guard refused: {exc}") from exc
@@ -106,6 +109,13 @@ def analyze(ctx: JobContext) -> RunRecord:
     return record
 
 
+def job_room(params: dict[str, Any]) -> tuple[RoomConfig, str]:
+    """The room a job brought with it, or the image's default, and which it was."""
+    if params.get("room") is not None:
+        return parse_room(params["room"]), "uploaded"
+    return _room(), "default"
+
+
 def _room() -> RoomConfig:
     if ROOM_JSON.is_file():
         return RoomConfig.load(ROOM_JSON)
@@ -113,6 +123,47 @@ def _room() -> RoomConfig:
 
     room, _ = default_room()
     return room
+
+
+ROOM_MAX_BYTES = 256 * 1024
+
+
+def checked_room(data: Any) -> RoomConfig:
+    """Validate an uploaded room with the CLI's own parser, as a clean 400."""
+    if isinstance(data, (bytes, str)):
+        if len(data) > ROOM_MAX_BYTES:
+            raise ServiceError("BAD_REQUEST", "the room setup is larger than 256 KB", field="room")
+        try:
+            data = json.loads(data)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ServiceError(
+                "BAD_REQUEST", f"the room setup is not valid JSON: {exc}", field="room"
+            ) from exc
+    try:
+        room = parse_room(data)
+    except RoomError as exc:
+        raise ServiceError(
+            "BAD_REQUEST", f"invalid room setup, {exc.field}: {exc.problem}", field=exc.field
+        ) from exc
+    if room.privacy_mode != "strict":
+        raise ServiceError(
+            "BAD_REQUEST",
+            "invalid room setup, privacy_mode: this service only runs strict rooms, "
+            "which destroy every frame after the pose is read",
+            field="privacy_mode",
+        )
+    return room
+
+
+def room_summary(room: RoomConfig, source: str) -> dict[str, Any]:
+    """What the UI and the result say about the room a run was measured against."""
+    return {
+        "name": room.room,
+        "source": source,
+        "calibration": room.calibration.to_dict(),
+        "zones": len(room.zones),
+        "notes": room.notes,
+    }
 
 
 def build_config() -> ServiceConfig:
@@ -135,7 +186,19 @@ def build_config() -> ServiceConfig:
 
 
 def create() -> Any:
-    app = create_app(build_config(), analyze)
+    config = build_config()
+    app = create_app(config, analyze)
+    _replace_job_route(app, config)
+
+    @app.get("/api/rooms/default")
+    async def default_room_setup() -> dict[str, Any]:
+        room = _room()
+        return {"room": room.to_dict(), "summary": room_summary(room, "default")}
+
+    @app.post("/api/rooms/check")
+    async def check_room(request: Request) -> dict[str, Any]:
+        room = checked_room(await request.body())
+        return {"room": room.to_dict(), "summary": room_summary(room, "uploaded")}
 
     @app.get("/api/samples")
     async def list_samples() -> dict[str, Any]:
@@ -154,3 +217,90 @@ def create() -> Any:
         }
 
     return app
+
+
+def _replace_job_route(app: Any, config: ServiceConfig) -> None:
+    """Swap servicekit's upload route for one that also takes a room setup.
+
+    servicekit is shared by five products and is not ours to change, so the
+    shared `POST /api/jobs` is removed from this app's router and an equivalent
+    one registered in its place. It accepts everything the shared route did, plus
+    a room: either `room` inside the `params` JSON, or a second file part named
+    `room`. The room is validated here, before a job exists, so a bad one is a
+    400 naming the field rather than a job that fails a minute later.
+    """
+    app.router.routes[:] = [
+        route
+        for route in app.router.routes
+        if not (
+            isinstance(route, APIRoute) and route.path == "/api/jobs" and "POST" in route.methods
+        )
+    ]
+
+    @app.post("/api/jobs", status_code=202)
+    async def create_job(
+        request: Request,
+        file: UploadFile = File(...),
+        params: str = Form("{}"),
+        room: UploadFile | None = File(None),
+    ) -> dict[str, Any]:
+        suffix = Path(file.filename or "").suffix.lower()
+        if suffix not in config.allowed_suffixes:
+            raise ServiceError(
+                "UNSUPPORTED_MEDIA",
+                f"{suffix or 'that file type'} is not accepted",
+                accepted=list(config.allowed_suffixes),
+            )
+        try:
+            parsed = json.loads(params) if params else {}
+        except json.JSONDecodeError as exc:
+            raise ServiceError("BAD_REQUEST", f"params is not valid JSON: {exc}") from exc
+        if not isinstance(parsed, dict):
+            raise ServiceError("BAD_REQUEST", "params must be a JSON object")
+
+        room_data: Any = parsed.pop("room", None)
+        if room is not None:
+            if room_data is not None:
+                raise ServiceError(
+                    "BAD_REQUEST",
+                    "send the room setup once: as params.room or as the room file, not both",
+                    field="room",
+                )
+            room_data = await room.read(ROOM_MAX_BYTES + 1)
+        if room_data is not None:
+            if suffix == ".json":
+                raise ServiceError(
+                    "BAD_REQUEST",
+                    "a pose track carries the room it was recorded in; a room setup "
+                    "can only be sent with a video",
+                    field="room",
+                )
+            checked = checked_room(room_data)
+            parsed["room"] = checked.to_dict()
+
+        data = await _read_upload(file, config)
+        store = request.app.state.store
+        job = store.create(file.filename or "upload", data, parsed)
+        store.start(job)
+        return {
+            "job_id": job.job_id,
+            "status": job.status,
+            "events_url": f"/api/jobs/{job.job_id}/events",
+        }
+
+
+async def _read_upload(file: UploadFile, config: ServiceConfig) -> bytes:
+    """Read an upload under the size limit. Mirrors servicekit's own reader."""
+    chunks, total = [], 0
+    while chunk := await file.read(1 << 20):
+        total += len(chunk)
+        if total > config.max_upload_bytes:
+            raise ServiceError(
+                "TOO_LARGE",
+                f"upload exceeds {config.max_upload_bytes // (1024 * 1024)} MB",
+                max_bytes=config.max_upload_bytes,
+            )
+        chunks.append(chunk)
+    if total == 0:
+        raise ServiceError("BAD_REQUEST", "the uploaded file is empty")
+    return b"".join(chunks)

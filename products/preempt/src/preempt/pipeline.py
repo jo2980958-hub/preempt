@@ -113,13 +113,15 @@ class Pipeline:
         t = room.thresholds
         self.kinematics = Kinematics(self.frame, t)
         self.exits = ExitDetector(
-            t, self.frame,
+            t,
+            self.frame,
             bed_zones=room.zones_of("bed"),
             chair_zones=room.zones_of("chair"),
         )
         self.gait = GaitWindow(t, self.frame, walls=room.zones_of("wall"))
         self.hazards = HazardScanner(
-            self.frame, t,
+            self.frame,
+            t,
             bed_zones=room.zones_of("bed"),
             door_zones=room.zones_of("door"),
             aid_zones=room.zones_of("aid"),
@@ -154,9 +156,7 @@ class Pipeline:
             else:
                 self.gait.clear()
 
-        risk = assess(
-            time_s, view, exit_reading, gait_report, hazards, self.room.thresholds
-        )
+        risk = assess(time_s, view, exit_reading, gait_report, hazards, self.room.thresholds)
         self.ladder.update(risk, has_hazard=bool(hazards and hazards.any))
         moment = Moment(time_s, risk, view, exit_reading, gait_report, pose)
         self.moments.append(moment)
@@ -172,7 +172,7 @@ class Pipeline:
     ) -> Analysis:
         """Replay a recorded pose track. No images exist at any point in this call."""
         view_hints = view_hints or {}
-        stride = max(1, int(round(fps / self.sample_hz)))
+        stride = max(1, round(fps / self.sample_hz))
         kept = [f for i, f in enumerate(frames) if i % stride == 0]
         total = max(1, len(kept))
         for n, pose in enumerate(kept):
@@ -187,11 +187,16 @@ class Pipeline:
                 person_seen=usable_pose is not None,
                 hint=view_hints.get(pose.index, USABLE),
             )
-            hazards = self.hazards.scan(
-                np.zeros((2, 2, 3), dtype=np.uint8), pose.time_s,
-                seat_floor_xy=self._seat_position(),
-                force=False,
-            ) if self.room.zones_of("aid") else None
+            hazards = (
+                self.hazards.scan(
+                    np.zeros((2, 2, 3), dtype=np.uint8),
+                    pose.time_s,
+                    seat_floor_xy=self._seat_position(),
+                    force=False,
+                )
+                if self.room.zones_of("aid")
+                else None
+            )
             self.step(usable_pose, pose.time_s, view, hazards=hazards)
             self.guard.ledger.frames_examined += 1
             self.guard.keypoints_kept(int(pose.xy.nbytes + pose.scores.nbytes))
@@ -234,10 +239,9 @@ class Pipeline:
             self.estimator = PoseEstimator()
         info = video_info(path)
         fps = info.fps if info.fps > 0 else (self.room.fps_hint or 30.0)
-        stride = max(1, int(round(fps / self.sample_hz)))
+        stride = max(1, round(fps / self.sample_hz))
         total_frames = max(1, info.frame_count // stride)
-        seen = 0
-        for frame in iter_video(path, stride=stride, max_side=1280):
+        for seen, frame in enumerate(iter_video(path, stride=stride, max_side=1280), start=1):
             time_s = frame.timestamp_ms / 1000.0
             image = frame.image
             self.guard.examined(image)
@@ -247,7 +251,8 @@ class Pipeline:
                 pose = self.estimator.estimate(image, frame.index, time_s)
             view = self.view.grade(image, time_s, person_seen=pose is not None)
             hazards = self.hazards.scan(
-                image, time_s,
+                image,
+                time_s,
                 seat_floor_xy=self._seat_position(),
                 person_box=pose.box if pose else None,
             )
@@ -256,7 +261,6 @@ class Pipeline:
             if pose is not None:
                 self.guard.keypoints_kept(int(pose.xy.nbytes + pose.scores.nbytes))
             self.step(pose, time_s, view, hazards=hazards)
-            seen += 1
             if progress and seen % 10 == 0:
                 progress(
                     min(99.0, 100.0 * seen / total_frames),
@@ -341,19 +345,61 @@ def _headline_metrics(analysis: Analysis) -> dict[str, Any]:
         "lead_time_s": None if analysis.lead_time_s is None else round(analysis.lead_time_s, 2),
         "calls": len(analysis.calls),
         "highest_rung": (
-            max((c["rung"] for c in analysis.calls), key=lambda r: ["none", "nudge", "station", "urgent", "maintenance"].index(r))
-            if analysis.calls else "none"
+            max(
+                (c["rung"] for c in analysis.calls),
+                key=lambda r: ["none", "nudge", "station", "urgent", "maintenance"].index(r),
+            )
+            if analysis.calls
+            else "none"
         ),
-        "seconds_rising_soon": round(states.count(RISING_SOON) / max(1e-9, len(states)) * (analysis.moments[-1].time_s if analysis.moments else 0), 2),
+        "seconds_rising_soon": round(
+            states.count(RISING_SOON)
+            / max(1e-9, len(states))
+            * (analysis.moments[-1].time_s if analysis.moments else 0),
+            2,
+        ),
         "peak_gait_score": round(max(gait_scores), 3) if gait_scores else None,
         "view": summarise(analysis.view_reports if hasattr(analysis, "view_reports") else []),
     }
 
 
-def build_record(analysis: Analysis, pipeline: Pipeline, *, params: dict[str, Any] | None = None) -> RunRecord:
+def room_setup(room: RoomConfig, source: str) -> dict[str, Any]:
+    """Which room a run was measured against, and how far its camera can be trusted."""
+    return {
+        "name": room.room,
+        "source": source,
+        "zones": [z.name for z in room.zones],
+        "calibration": room.calibration.to_dict(),
+        "notes": room.notes,
+    }
+
+
+def calibration_line(room: RoomConfig) -> str:
+    """One line for an evidence card: the room, and whether its camera was measured."""
+    c = room.calibration
+    words = {"unstated": "not stated", "synthetic": "exact (synthetic)"}
+    return (
+        f"room: {room.room}; camera height {words.get(c.camera_height, c.camera_height)}, "
+        f"focal length {words.get(c.focal_length, c.focal_length)}"
+    )
+
+
+def build_record(
+    analysis: Analysis,
+    pipeline: Pipeline,
+    *,
+    params: dict[str, Any] | None = None,
+    room_source: str = "supplied",
+) -> RunRecord:
     """Flatten an Analysis into the shared RunRecord shape every product returns."""
-    record = RunRecord(product=PRODUCT, params=dict(params or {}))
-    record.input = {"source": analysis.source, "room": analysis.room.room, "fps": round(analysis.fps, 2)}
+    params = {k: v for k, v in (params or {}).items() if k != "room"}
+    record = RunRecord(product=PRODUCT, params=params)
+    record.input = {
+        "source": analysis.source,
+        "room": analysis.room.room,
+        "fps": round(analysis.fps, 2),
+        "room_setup": room_setup(analysis.room, room_source),
+    }
     peak = analysis.peak
 
     metrics = _headline_metrics(analysis)
@@ -373,7 +419,10 @@ def build_record(analysis: Analysis, pipeline: Pipeline, *, params: dict[str, An
             "certainty": peak.risk.certainty if peak else "observed",
         },
         {"kind": "calls", "calls": analysis.calls},
-        {"kind": "hazards", **(analysis.hazards.to_dict() if analysis.hazards else {"hazards": []})},
+        {
+            "kind": "hazards",
+            **(analysis.hazards.to_dict() if analysis.hazards else {"hazards": []}),
+        },
         {
             "kind": "timeline",
             "samples": [m.to_dict() for m in analysis.moments],
@@ -381,7 +430,11 @@ def build_record(analysis: Analysis, pipeline: Pipeline, *, params: dict[str, An
         {
             "kind": "keypoint-ledger",
             "note": "the camera's entire output for this instant, as the device keeps it",
-            "frame": (peak.pose.to_dict(analysis.room.thresholds.keypoint_score_min) if peak and peak.pose else None),
+            "frame": (
+                peak.pose.to_dict(analysis.room.thresholds.keypoint_score_min)
+                if peak and peak.pose
+                else None
+            ),
         },
     ]
 
@@ -396,9 +449,7 @@ def build_record(analysis: Analysis, pipeline: Pipeline, *, params: dict[str, An
         )
     for note in pipeline.guard.ledger.refusals:
         record.refuse("PRIVACY_REFUSED", note)
-    unusable = [
-        r for r in pipeline.view_reports if not r.usable and r.state != view_paused
-    ]
+    unusable = [r for r in pipeline.view_reports if not r.usable and r.state != view_paused]
     if unusable:
         worst = unusable[0]
         record.refuse(
@@ -424,6 +475,7 @@ def attach_evidence(record: RunRecord, analysis: Analysis, pipeline: Pipeline) -
                 f"drawn from {17} keypoints; "
                 f"{pipeline.guard.ledger.frames_retained} camera frames retained"
             ),
+            subfooter=calibration_line(analysis.room),
         )
         uri = pipeline.guard.emit("risk-state.png", encode_png(card), Provenance.SYNTHETIC)
         record.add_evidence(
@@ -432,13 +484,20 @@ def attach_evidence(record: RunRecord, analysis: Analysis, pipeline: Pipeline) -
                 kind="overlay",
                 uri=uri,
                 timestamp_ms=peak.time_s * 1000.0,
-                caption=f"{peak.risk.headline} at {peak.time_s:.1f} s, drawn from keypoints only",
+                caption=(
+                    f"{peak.risk.headline} at {peak.time_s:.1f} s, drawn from keypoints only; "
+                    f"{calibration_line(analysis.room)}"
+                ),
                 metrics={"state": peak.risk.state},
             )
         )
 
     last_floor = next(
-        (m for m in reversed(analysis.moments) if m.exit_reading and m.exit_reading.lean_offset is not None),
+        (
+            m
+            for m in reversed(analysis.moments)
+            if m.exit_reading and m.exit_reading.lean_offset is not None
+        ),
         None,
     )
     position = None
@@ -452,8 +511,11 @@ def attach_evidence(record: RunRecord, analysis: Analysis, pipeline: Pipeline) -
         analysis.room.zones,
         person_xy=position,
         corridor=(analysis.hazards.corridor if analysis.hazards else None),
-        hazards=[h.floor_xy for h in (analysis.hazards.hazards if analysis.hazards else []) if h.floor_xy],
+        hazards=[
+            h.floor_xy for h in (analysis.hazards.hazards if analysis.hazards else []) if h.floor_xy
+        ],
         title=f"{analysis.room.room}: plan view",
+        subtitle=calibration_line(analysis.room),
     )
     uri = pipeline.guard.emit("room-plan.png", encode_png(plan), Provenance.SYNTHETIC)
     record.add_evidence(
@@ -461,7 +523,10 @@ def attach_evidence(record: RunRecord, analysis: Analysis, pipeline: Pipeline) -
             label="room plan",
             kind="chart",
             uri=uri,
-            caption="the room as the ward drew it, with the walking route and anything on it",
+            caption=(
+                "the room as the ward drew it, with the walking route and anything on it; "
+                f"{calibration_line(analysis.room)}"
+            ),
         )
     )
     # Re-read the ledger now that the evidence has been written, so the privacy
@@ -470,7 +535,9 @@ def attach_evidence(record: RunRecord, analysis: Analysis, pipeline: Pipeline) -
     record.metrics["privacy"] = pipeline.guard.to_dict()
 
 
-def analyse_track(path: str | Path, *, sink: Any = None, progress=None) -> tuple[RunRecord, Analysis]:
+def analyse_track(
+    path: str | Path, *, sink: Any = None, progress=None
+) -> tuple[RunRecord, Analysis]:
     frames, room, meta = load_track(path)
     guard = PrivacyGuard(room.privacy_mode, sink=sink)
     pipeline = Pipeline(room, guard=guard)
@@ -479,7 +546,12 @@ def analyse_track(path: str | Path, *, sink: Any = None, progress=None) -> tuple
             frames, meta["fps"], progress=progress, view_hints=meta.get("view_hints", {})
         )
     analysis.source = f"{meta['name']} (pose track)"
-    record = build_record(analysis, pipeline, params={"input_kind": "pose track", **meta.get("truth", {})})
+    record = build_record(
+        analysis,
+        pipeline,
+        params={"input_kind": "pose track", **meta.get("truth", {})},
+        room_source="pose track",
+    )
     attach_evidence(record, analysis, pipeline)
     return record, analysis
 
@@ -491,13 +563,16 @@ def analyse_video(
     sink: Any = None,
     progress=None,
     estimator: PoseEstimator | None = None,
+    room_source: str = "supplied",
 ) -> tuple[RunRecord, Analysis]:
     guard = PrivacyGuard(room.privacy_mode, sink=sink)
     pipeline = Pipeline(room, guard=guard, estimator=estimator)
     record = RunRecord(product=PRODUCT)
     with recording(record):
         analysis = pipeline.run_video(path, progress=progress)
-    built = build_record(analysis, pipeline, params={"input_kind": "video"})
+    built = build_record(
+        analysis, pipeline, params={"input_kind": "video"}, room_source=room_source
+    )
     built.stages = record.stages
     if pipeline.estimator is not None:
         built.metrics["models"] = pipeline.estimator.info()

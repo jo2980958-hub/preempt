@@ -92,9 +92,7 @@ class FloorPlane:
                 list(self.vertical_vanishing_point) if self.vertical_vanishing_point else None
             ),
             "reference_height_m": self.reference_height_m,
-            "reference_base_px": (
-                list(self.reference_base_px) if self.reference_base_px else None
-            ),
+            "reference_base_px": (list(self.reference_base_px) if self.reference_base_px else None),
             "reference_top_px": list(self.reference_top_px) if self.reference_top_px else None,
         }
 
@@ -223,6 +221,50 @@ class Thresholds:
         return {k: getattr(self, k) for k in self.__dataclass_fields__}
 
 
+CALIBRATION_SOURCES = ("measured", "assumed", "synthetic", "unstated")
+
+
+@dataclass(frozen=True)
+class Calibration:
+    """Where this room's camera height and focal length came from.
+
+    Every metre Preempt reports rests on these two numbers, so the room says how
+    they were obtained and the result carries that through to the evidence card.
+    `measured` means somebody measured them in the room, `assumed` means they
+    were worked out from something else and could be wrong (the CDC rooms took
+    the clinician to be 1.65 m tall), `synthetic` means the camera generated the
+    scene so they are exact, and `unstated` is what a room that says nothing
+    gets. The interface treats `unstated` as `assumed`, never as `measured`.
+    """
+
+    camera_height: str = "unstated"
+    focal_length: str = "unstated"
+    note: str = ""
+
+    @property
+    def calibrated(self) -> bool:
+        """Only a measured or exactly known camera counts as calibrated."""
+        good = ("measured", "synthetic")
+        return self.camera_height in good and self.focal_length in good
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "camera_height": self.camera_height,
+            "focal_length": self.focal_length,
+            "note": self.note,
+            "calibrated": self.calibrated,
+        }
+
+
+class RoomError(ValueError):
+    """A room setup that cannot be used, naming the field that is wrong."""
+
+    def __init__(self, field_name: str, problem: str) -> None:
+        super().__init__(f"{field_name}: {problem}")
+        self.field = field_name
+        self.problem = problem
+
+
 @dataclass
 class RoomConfig:
     """Everything about one room. Serialised to JSON and shipped with the footage."""
@@ -238,6 +280,7 @@ class RoomConfig:
     fps_hint: float = 0.0
     """Used when the container reports no frame rate. 0 means trust the file."""
     notes: str = ""
+    calibration: Calibration = field(default_factory=Calibration)
 
     def zones_of(self, kind: str) -> tuple[Zone, ...]:
         return tuple(z for z in self.zones if z.kind == kind)
@@ -255,21 +298,20 @@ class RoomConfig:
             "privacy_mode": self.privacy_mode,
             "fps_hint": self.fps_hint,
             "notes": self.notes,
+            "calibration": {
+                k: v for k, v in self.calibration.to_dict().items() if k != "calibrated"
+            },
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> RoomConfig:
-        thresholds = Thresholds(**data.get("thresholds", {})) if data.get("thresholds") else Thresholds()
-        return cls(
-            room=data.get("room", "room"),
-            bed_name=data.get("bed_name", "bed"),
-            floor=FloorPlane.from_dict(data["floor"]) if data.get("floor") else None,
-            zones=tuple(Zone.from_dict(z) for z in data.get("zones", ())),
-            thresholds=thresholds,
-            privacy_mode=data.get("privacy_mode", "strict"),
-            fps_hint=float(data.get("fps_hint", 0.0)),
-            notes=data.get("notes", ""),
-        )
+    def from_dict(cls, data: Any) -> RoomConfig:
+        """Build a room from its JSON form, refusing anything malformed by name.
+
+        The command line, the pose-track loader and the upload API all come
+        through here, so a room the CLI accepts is exactly a room the service
+        accepts. Every refusal is a `RoomError` naming the field.
+        """
+        return parse_room(data)
 
     @classmethod
     def load(cls, path: str | Path) -> RoomConfig:
@@ -277,3 +319,188 @@ class RoomConfig:
 
     def save(self, path: str | Path) -> None:
         Path(path).write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Validation
+# ---------------------------------------------------------------------------
+
+_ROOM_KEYS = {
+    "room",
+    "bed_name",
+    "floor",
+    "zones",
+    "thresholds",
+    "privacy_mode",
+    "fps_hint",
+    "notes",
+    "calibration",
+}
+_FLOOR_KEYS = {
+    "image_points",
+    "world_points",
+    "vertical_vanishing_point",
+    "reference_height_m",
+    "reference_base_px",
+    "reference_top_px",
+}
+
+
+def _number(value: Any, where: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise RoomError(where, f"must be a number, got {type(value).__name__}")
+    number = float(value)
+    if not np.isfinite(number):
+        raise RoomError(where, "must be a finite number")
+    return number
+
+
+def _point(value: Any, where: str) -> tuple[float, float]:
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        raise RoomError(where, "must be an [x, y] pair")
+    return _number(value[0], f"{where}[0]"), _number(value[1], f"{where}[1]")
+
+
+def _points(value: Any, where: str, *, exactly: int | None = None, at_least: int = 0) -> tuple:
+    if not isinstance(value, (list, tuple)):
+        raise RoomError(where, "must be a list of [x, y] points")
+    if exactly is not None and len(value) != exactly:
+        raise RoomError(where, f"needs exactly {exactly} points, got {len(value)}")
+    if len(value) < at_least:
+        raise RoomError(where, f"needs at least {at_least} points, got {len(value)}")
+    return tuple(_point(p, f"{where}[{i}]") for i, p in enumerate(value))
+
+
+def _text_field(data: dict[str, Any], key: str, default: str, where: str = "") -> str:
+    value = data.get(key, default)
+    if not isinstance(value, str):
+        raise RoomError(f"{where}{key}", f"must be text, got {type(value).__name__}")
+    return value
+
+
+def _unknown(data: dict[str, Any], known: set[str], where: str) -> None:
+    extra = sorted(set(data) - known)
+    if extra:
+        raise RoomError(f"{where}{extra[0]}", f"is not a room setup field; known: {sorted(known)}")
+
+
+def parse_room(data: Any) -> RoomConfig:
+    """Validate a room setup's JSON form and build it. Raises `RoomError`."""
+    if not isinstance(data, dict):
+        raise RoomError("room", "a room setup must be a JSON object")
+    _unknown(data, _ROOM_KEYS, "")
+
+    floor_data = data.get("floor")
+    if floor_data is None:
+        raise RoomError(
+            "floor",
+            "is required: mark four floor points so anything can be measured in metres",
+        )
+    if not isinstance(floor_data, dict):
+        raise RoomError("floor", "must be an object")
+    _unknown(floor_data, _FLOOR_KEYS, "floor.")
+    for key in ("image_points", "world_points"):
+        if key not in floor_data:
+            raise RoomError(f"floor.{key}", "is required")
+    image_points = _points(floor_data["image_points"], "floor.image_points", exactly=4)
+    world_points = _points(floor_data["world_points"], "floor.world_points", exactly=4)
+    if polygon_area(world_points) < 1e-3:
+        raise RoomError("floor.world_points", "the four points must enclose an area of floor")
+
+    def optional_point(key: str) -> tuple[float, float] | None:
+        value = floor_data.get(key)
+        return None if value is None else _point(value, f"floor.{key}")
+
+    reference = _number(floor_data.get("reference_height_m", 1.70), "floor.reference_height_m")
+    if not 0.2 <= reference <= 5.0:
+        raise RoomError(
+            "floor.reference_height_m", f"{reference} m is not a plausible reference height"
+        )
+    floor = FloorPlane(
+        image_points=image_points,
+        world_points=world_points,
+        vertical_vanishing_point=optional_point("vertical_vanishing_point"),
+        reference_height_m=reference,
+        reference_base_px=optional_point("reference_base_px"),
+        reference_top_px=optional_point("reference_top_px"),
+    )
+
+    zones_data = data.get("zones", [])
+    if not isinstance(zones_data, (list, tuple)):
+        raise RoomError("zones", "must be a list")
+    zones = []
+    for i, zone in enumerate(zones_data):
+        where = f"zones[{i}]"
+        if not isinstance(zone, dict):
+            raise RoomError(where, "must be an object with name, kind and points")
+        _unknown(zone, {"name", "kind", "points"}, f"{where}.")
+        name = _text_field(zone, "name", "", f"{where}.")
+        if not name:
+            raise RoomError(f"{where}.name", "is required")
+        kind = zone.get("kind")
+        if kind not in ZONE_KINDS:
+            raise RoomError(
+                f"{where}.kind", f"{kind!r} is not a zone kind; known: {list(ZONE_KINDS)}"
+            )
+        points = _points(zone.get("points"), f"{where}.points", at_least=3)
+        zones.append(Zone(name=name, kind=kind, points=points))
+
+    thresholds_data = data.get("thresholds") or {}
+    if not isinstance(thresholds_data, dict):
+        raise RoomError("thresholds", "must be an object")
+    known = set(Thresholds.__dataclass_fields__)
+    values: dict[str, Any] = {}
+    for key, value in thresholds_data.items():
+        if key not in known:
+            raise RoomError(f"thresholds.{key}", "is not a threshold Preempt knows")
+        number = _number(value, f"thresholds.{key}")
+        default = getattr(Thresholds, key)
+        values[key] = (
+            int(number) if isinstance(default, int) and not isinstance(default, bool) else number
+        )
+
+    privacy_mode = _text_field(data, "privacy_mode", "strict")
+    if privacy_mode not in ("strict", "diagnostic"):
+        raise RoomError("privacy_mode", f"must be strict or diagnostic, not {privacy_mode!r}")
+
+    calibration_data = data.get("calibration") or {}
+    if not isinstance(calibration_data, dict):
+        raise RoomError("calibration", "must be an object")
+    _unknown(
+        calibration_data, {"camera_height", "focal_length", "note", "calibrated"}, "calibration."
+    )
+    sources = {}
+    for key in ("camera_height", "focal_length"):
+        value = calibration_data.get(key, "unstated")
+        if value not in CALIBRATION_SOURCES:
+            raise RoomError(
+                f"calibration.{key}", f"{value!r} is not one of {list(CALIBRATION_SOURCES)}"
+            )
+        sources[key] = value
+
+    fps_hint = _number(data.get("fps_hint", 0.0), "fps_hint")
+    if fps_hint < 0:
+        raise RoomError("fps_hint", "must not be negative")
+
+    return RoomConfig(
+        room=_text_field(data, "room", "room") or "room",
+        bed_name=_text_field(data, "bed_name", "bed"),
+        floor=floor,
+        zones=tuple(zones),
+        thresholds=Thresholds(**values),
+        privacy_mode=privacy_mode,
+        fps_hint=fps_hint,
+        notes=_text_field(data, "notes", ""),
+        calibration=Calibration(
+            camera_height=sources["camera_height"],
+            focal_length=sources["focal_length"],
+            note=_text_field(calibration_data, "note", "", "calibration."),
+        ),
+    )
+
+
+def polygon_area(points: tuple[tuple[float, float], ...]) -> float:
+    """Unsigned polygon area, by the shoelace formula."""
+    xy = np.asarray(points, dtype=np.float64)
+    x, y = xy[:, 0], xy[:, 1]
+    return float(abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1))) / 2.0)

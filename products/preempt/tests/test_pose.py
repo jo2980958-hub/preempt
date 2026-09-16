@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import cv2
 import numpy as np
-import pytest
 from conftest import needs_models
-
 from preempt.pose import (
     KEYPOINT_NAMES,
     RTMPOSE_T,
@@ -18,7 +15,7 @@ from preempt.pose import (
 
 def test_the_crop_fixes_the_aspect_ratio_before_warping():
     """Skipping the aspect fix squashes the person and moves every wrist."""
-    forward, inverse = bbox_to_affine((100.0, 100.0, 200.0, 500.0), (192, 256))
+    forward, _inverse = bbox_to_affine((100.0, 100.0, 200.0, 500.0), (192, 256))
     scale_x = float(np.hypot(forward[0, 0], forward[1, 0]))
     scale_y = float(np.hypot(forward[0, 1], forward[1, 1]))
     assert abs(scale_x - scale_y) < 1e-6, "the warp is anisotropic; the person is squashed"
@@ -105,6 +102,5 @@ def test_the_estimator_keeps_no_image_after_it_returns(estimator):
     estimator.estimate(image, 0, 0.0)
     assert estimator.stats.image_bytes_read > before
     assert not any(
-        isinstance(v, np.ndarray) and v.shape == image.shape
-        for v in vars(estimator).values()
+        isinstance(v, np.ndarray) and v.shape == image.shape for v in vars(estimator).values()
     )

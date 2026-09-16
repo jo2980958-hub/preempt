@@ -6,7 +6,7 @@ async function json(url, init) {
     let detail = `${res.status} ${res.statusText}`;
     try {
       const body = await res.json();
-      detail = body.message || body.error || JSON.stringify(body);
+      detail = body.error?.message || body.message || JSON.stringify(body);
     } catch { /* the body was not JSON; the status line will have to do */ }
     throw new Error(detail);
   }
@@ -21,12 +21,19 @@ export const getJob = (id) => json(`/api/jobs/${encodeURIComponent(id)}`);
 export const startSample = (name) =>
   json(`/api/samples/${encodeURIComponent(name)}`, { method: 'POST' });
 
-export function startUpload(file, params = {}) {
+export function startUpload(file, params = {}, roomFile = null) {
   const form = new FormData();
   form.append('file', file);
   form.append('params', JSON.stringify(params));
+  if (roomFile) form.append('room', roomFile);
   return json('/api/jobs', { method: 'POST', body: form });
 }
+
+export const getDefaultRoom = () => json('/api/rooms/default');
+
+/** The service's own validator, so the preview and the run agree on what is valid. */
+export const checkRoom = (text) =>
+  json('/api/rooms/check', { method: 'POST', body: text, headers: { 'Content-Type': 'application/json' } });
 
 /**
  * Follow a job to its end. Resolves with the finished job record.

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from preempt.config import FloorPlane, RoomConfig, Thresholds, Zone
 from preempt.evaluate import Outcome, Report, run_synthetic
 from preempt.gait import GaitWindow, perpendicular_deviation, smooth, stance_onsets
@@ -25,7 +24,7 @@ def pose_from(camera, joints_world, index=0, time_s=0.0, score=0.9) -> PoseFrame
 
 
 def test_the_centre_of_mass_sits_between_the_hips_and_the_shoulders(room_and_camera):
-    room, camera = room_and_camera
+    _room, camera = room_and_camera
     pose = pose_from(camera, place(posture(), (2.0, 2.0), 0.0))
     com, seen = centre_of_mass(pose, 0.3)
     assert seen == 13
@@ -35,7 +34,7 @@ def test_the_centre_of_mass_sits_between_the_hips_and_the_shoulders(room_and_cam
 
 
 def test_an_occluded_arm_shifts_the_centre_of_mass_rather_than_biasing_it(room_and_camera):
-    room, camera = room_and_camera
+    _room, camera = room_and_camera
     joints = place(posture(), (2.0, 2.0), 0.0)
     full = pose_from(camera, joints)
     scores = np.full(17, 0.9)
@@ -49,7 +48,7 @@ def test_an_occluded_arm_shifts_the_centre_of_mass_rather_than_biasing_it(room_a
 
 
 def test_the_knee_angle_is_straight_standing_and_bent_sitting(room_and_camera):
-    room, camera = room_and_camera
+    _room, camera = room_and_camera
     standing = pose_from(camera, place(posture(), (2.0, 2.2), 90.0))
     seated = pose_from(camera, place(posture(knee_bend=0.95, seat_height=0.5), (2.0, 2.2), 90.0))
     assert knee_angle_deg(standing, 0.3) > 150.0
@@ -128,9 +127,9 @@ def test_sway_is_measured_about_the_fitted_walking_line_not_a_fixed_axis():
     deviation, _ = perpendicular_deviation(straight)
     assert float(np.sqrt(np.mean(deviation**2))) < 0.01
 
-    wobbly = straight + np.stack(
-        [-0.6 * np.sin(6 * t), np.sin(6 * t)], axis=1
-    ) * 0.08 / np.sqrt(1.36)
+    wobbly = straight + np.stack([-0.6 * np.sin(6 * t), np.sin(6 * t)], axis=1) * 0.08 / np.sqrt(
+        1.36
+    )
     deviation, _ = perpendicular_deviation(wobbly)
     assert float(np.sqrt(np.mean(deviation**2))) > 0.04
 

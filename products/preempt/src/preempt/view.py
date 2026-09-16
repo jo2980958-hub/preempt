@@ -148,20 +148,35 @@ class ViewMonitor:
 
         if mean_v < self.t.dark_mean_v or dark_fraction > self.t.dark_low_bin_fraction:
             return ViewReport(
-                TOO_DARK, time_s, mean_v, dark_fraction, lap, shift,
+                TOO_DARK,
+                time_s,
+                mean_v,
+                dark_fraction,
+                lap,
+                shift,
                 f"mean brightness {mean_v:.0f} of 255, "
                 f"{dark_fraction * 100:.0f}% of the frame is near black",
             )
         if lap < self.t.blocked_laplacian_var:
             return ViewReport(
-                BLOCKED, time_s, mean_v, dark_fraction, lap, shift,
+                BLOCKED,
+                time_s,
+                mean_v,
+                dark_fraction,
+                lap,
+                shift,
                 f"no detail anywhere in the frame (focus measure {lap:.1f})",
             )
         if shift is not None and shift > self.t.camera_moved_px:
             if self.moved_since_s is None:
                 self.moved_since_s = time_s
             return ViewReport(
-                CAMERA_MOVED, time_s, mean_v, dark_fraction, lap, shift,
+                CAMERA_MOVED,
+                time_s,
+                mean_v,
+                dark_fraction,
+                lap,
+                shift,
                 f"the view has shifted {shift:.0f} px since setup, "
                 "so the zones no longer line up with the room",
             )
@@ -170,15 +185,17 @@ class ViewMonitor:
             gone_for = time_s - last if last is not None else time_s
             if gone_for >= self.t.absent_s:
                 return ViewReport(
-                    NO_PERSON, time_s, mean_v, dark_fraction, lap, shift,
+                    NO_PERSON,
+                    time_s,
+                    mean_v,
+                    dark_fraction,
+                    lap,
+                    shift,
                     f"nobody in view for {gone_for:.0f} s",
                 )
         return ViewReport(USABLE, time_s, mean_v, dark_fraction, lap, shift)
 
-
-    def grade_recorded(
-        self, time_s: float, *, person_seen: bool, hint: str = USABLE
-    ) -> ViewReport:
+    def grade_recorded(self, time_s: float, *, person_seen: bool, hint: str = USABLE) -> ViewReport:
         """Grade an instant when there is no image to look at.
 
         A recorded pose track has no pixels by construction, so the three
@@ -198,7 +215,12 @@ class ViewMonitor:
             gone_for = time_s - last if last is not None else time_s
             if gone_for >= self.t.absent_s:
                 return ViewReport(
-                    NO_PERSON, time_s, 0.0, 0.0, 0.0, None,
+                    NO_PERSON,
+                    time_s,
+                    0.0,
+                    0.0,
+                    0.0,
+                    None,
                     f"nobody in view for {gone_for:.0f} s",
                 )
         return ViewReport(USABLE, time_s, 0.0, 0.0, 0.0, None)

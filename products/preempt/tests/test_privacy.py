@@ -10,7 +10,6 @@ from __future__ import annotations
 import cv2
 import numpy as np
 import pytest
-
 from preempt import PrivacyGuard, PrivacyViolation, Provenance
 from preempt.pipeline import Pipeline
 from preempt.render import encode_png, pose_card
@@ -29,9 +28,7 @@ def noisy_video(tmp_path):
     """
     path = tmp_path / "source.mp4"
     rng = np.random.default_rng(4242)
-    writer = cv2.VideoWriter(
-        str(path), cv2.VideoWriter.fourcc(*"mp4v"), 15.0, (320, 240)
-    )
+    writer = cv2.VideoWriter(str(path), cv2.VideoWriter.fourcc(*"mp4v"), 15.0, (320, 240))
     frames = []
     for i in range(30):
         frame = rng.integers(0, 255, (240, 320, 3), dtype=np.uint8)

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import cv2
 import numpy as np
-import pytest
-
 from preempt.config import Thresholds
 from preempt.view import (
     BLOCKED,

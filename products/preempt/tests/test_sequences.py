@@ -8,7 +8,6 @@ seconds.
 from __future__ import annotations
 
 import pytest
-
 from preempt.pipeline import Pipeline, analyse_track
 from preempt.privacy import PrivacyGuard
 from preempt.risk import FLOOR, RISING_SOON, UNSTEADY
@@ -20,9 +19,7 @@ CALL_RUNGS = ("nudge", "station", "urgent")
 def run(name: str, *, seed: int = 20261026, loops: int = 1):
     sequence = make(name, seed=seed, loops=loops)
     pipeline = Pipeline(sequence.room, guard=PrivacyGuard("strict"))
-    analysis = pipeline.run_track(
-        sequence.frames, sequence.fps, view_hints=sequence.view_hints
-    )
+    analysis = pipeline.run_track(sequence.frames, sequence.fps, view_hints=sequence.view_hints)
     return sequence, pipeline, analysis
 
 
@@ -35,7 +32,7 @@ def called(analysis) -> bool:
 
 @pytest.mark.parametrize("name", ["bed-exit-steady", "bed-exit-unsteady", "bed-exit-to-floor"])
 def test_a_bed_exit_is_called_before_the_person_is_on_their_feet(name):
-    sequence, pipeline, analysis = run(name)
+    sequence, _pipeline, analysis = run(name)
     assert called(analysis), "no call was raised on a bed exit"
     assert analysis.lead_time_s is not None
     assert analysis.lead_time_s > 1.5, (
@@ -105,6 +102,23 @@ def test_sitting_up_and_lying_back_down_is_not_a_bed_exit():
     assert not called(analysis)
 
 
+def test_sitting_down_in_a_chair_is_not_getting_up():
+    """Lowering onto a seat leans over the feet with bent knees, like a rise does."""
+    for seed in range(5):
+        _, _pipeline, analysis = run("sit-down-in-chair", seed=20261026 + seed * 977)
+        assert not called(analysis), f"seed {seed}: called at {analysis.calls[0]['time_s']:.1f} s"
+
+
+def test_standing_up_and_sitting_straight_back_down_is_one_call_not_two():
+    for seed in range(5):
+        sequence, _, analysis = run("chair-stand-and-sit-back", seed=20261026 + seed * 977)
+        events = sequence.truth["events"]
+        times = [c["time_s"] for c in analysis.calls if c["rung"] in CALL_RUNGS]
+        assert times and times[0] < events["standing"], f"seed {seed}: rise not called in time"
+        late = [t for t in times if t >= events["sit_down_starts"]]
+        assert not late, f"seed {seed}: called as the person sat back down, at {late}"
+
+
 # --- the honesty rail ------------------------------------------------------
 
 
@@ -140,7 +154,12 @@ def test_every_scenario_produces_a_serialisable_record(tmp_path):
         assert len(text) > 500
         assert record.metrics["privacy"]["clean"] is True
         assert record.metrics["peak_state"] in (
-            "settled", "watch", "rising soon", "unsteady", "on the floor", "view unusable",
+            "settled",
+            "watch",
+            "rising soon",
+            "unsteady",
+            "on the floor",
+            "view unusable",
         )
 
 

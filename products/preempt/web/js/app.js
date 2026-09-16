@@ -11,13 +11,19 @@ import {
 } from './shell.js';
 import {
   mountPicker, setSamples, currentSample, currentUpload,
-  pickerUnavailable, compactPicker,
+  pickerUnavailable, compactPicker, isTrack,
 } from './picker.js';
+import { mountSetup, previewVideo, currentRoomFile, setupReady } from './setup.js';
 
 let busy = false;
 
 async function run() {
   if (busy) return;
+  const video = currentUpload();
+  if (video && !isTrack(video) && !setupReady()) {
+    status('Pick a room setup the service accepts first', 'failed');
+    return;
+  }
   busy = true;
   ui.start.disabled = true;
   ui.empty.hidden = true;
@@ -29,7 +35,8 @@ async function run() {
   ui.source.textContent = `Watching ${upload ? upload.name : currentSample()}`;
 
   try {
-    const job = upload ? await api.startUpload(upload) : await api.startSample(currentSample());
+    const room = upload && !isTrack(upload) ? currentRoomFile() : null;
+    const job = upload ? await api.startUpload(upload, {}, room) : await api.startSample(currentSample());
     const done = await api.follow(job, {
       onProgress: (e) => {
         stepProgress(e.percent, e.message);
@@ -73,7 +80,8 @@ function show(record, jobId) {
 async function boot() {
   initTheme();
   watchSections();
-  mountPicker(run);
+  mountPicker(run, previewVideo);
+  mountSetup(run);
   ui.start.addEventListener('click', run);
 
   try {

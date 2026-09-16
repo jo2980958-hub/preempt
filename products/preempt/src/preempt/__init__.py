@@ -15,7 +15,7 @@ Start here:
 from __future__ import annotations
 
 from .config import FloorPlane, RoomConfig, Thresholds, Zone
-from .escalation import EscalationLadder, Call
+from .escalation import Call, EscalationLadder
 from .exits import ExitDetector, ExitReading
 from .gait import GaitReport, GaitWindow
 from .geometry import FloorFrame, GeometryError, HeightEstimate

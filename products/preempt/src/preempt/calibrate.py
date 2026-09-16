@@ -279,9 +279,7 @@ def _focal_from(vz: np.ndarray, horizon: np.ndarray, centre: tuple[float, float]
     cx, cy = centre
     a, b, c = (float(v) for v in horizon)
     depth = a * cx + b * cy + c
-    numerator, coefficient = (
-        (float(vz[0]) - cx, a) if abs(a) > abs(b) else (float(vz[1]) - cy, b)
-    )
+    numerator, coefficient = (float(vz[0]) - cx, a) if abs(a) > abs(b) else (float(vz[1]) - cy, b)
     if abs(coefficient) < 1e-6:
         return None
     value = numerator * depth / coefficient
@@ -383,12 +381,12 @@ def calibrate_from_people(
             reason="the recovered camera height is not plausible for a room",
         )
 
-    plane = _build_plane(
-        k, normal, camera_height, reference, k_inv, floor_extent_m, low, high
-    )
+    plane = _build_plane(k, normal, camera_height, reference, k_inv, floor_extent_m, low, high)
     if plane is None:
         return Calibration(
-            ok=False, focal_px=focal, stances_used=len(stances),
+            ok=False,
+            focal_px=focal,
+            stances_used=len(stances),
             reason="the floor frame came out degenerate",
         )
 
@@ -486,7 +484,9 @@ def _build_plane(
         projected = k @ point
         if projected[2] <= 1e-6:
             return None
-        image_points.append((float(projected[0] / projected[2]), float(projected[1] / projected[2])))
+        image_points.append(
+            (float(projected[0] / projected[2]), float(projected[1] / projected[2]))
+        )
     world_points = [(-half, -half), (half, -half), (half, half), (-half, half)]
 
     top_world = origin - normal * (high_m - low_m + low_m)

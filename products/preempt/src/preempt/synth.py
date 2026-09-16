@@ -37,7 +37,7 @@ from typing import Any
 
 import numpy as np
 
-from .config import FloorPlane, RoomConfig, Thresholds, Zone
+from .config import Calibration, FloorPlane, RoomConfig, Thresholds, Zone
 from .pose import KEYPOINT_NAMES, PoseFrame
 
 RNG_SEED = 20261026
@@ -64,9 +64,17 @@ STANDING_BODY: dict[str, tuple[float, float, float]] = {
 }
 
 UPPER = (
-    "nose", "left eye", "right eye", "left ear", "right ear",
-    "left shoulder", "right shoulder", "left elbow", "right elbow",
-    "left wrist", "right wrist",
+    "nose",
+    "left eye",
+    "right eye",
+    "left ear",
+    "right ear",
+    "left shoulder",
+    "right shoulder",
+    "left elbow",
+    "right elbow",
+    "left wrist",
+    "right wrist",
 )
 
 
@@ -88,7 +96,11 @@ class SynthCamera:
     @property
     def K(self) -> np.ndarray:
         return np.array(
-            [[self.focal, 0.0, self.width / 2.0], [0.0, self.focal, self.height / 2.0], [0.0, 0.0, 1.0]]
+            [
+                [self.focal, 0.0, self.width / 2.0],
+                [0.0, self.focal, self.height / 2.0],
+                [0.0, 0.0, 1.0],
+            ]
         )
 
     @property
@@ -112,7 +124,9 @@ class SynthCamera:
         image = (self.K @ (camera / z[:, None]).T).T
         return image[:, :2]
 
-    def floor_plane(self, corners_m: np.ndarray, reference_xy: tuple[float, float] = (2.0, 1.2)) -> FloorPlane:
+    def floor_plane(
+        self, corners_m: np.ndarray, reference_xy: tuple[float, float] = (2.0, 1.2)
+    ) -> FloorPlane:
         """The FloorPlane the engine will be given, derived from this exact camera."""
         world3 = np.concatenate([corners_m, np.zeros((corners_m.shape[0], 1))], axis=1)
         image_points = self.project(world3)
@@ -203,7 +217,9 @@ def posture(
     return joints
 
 
-def place(joints: np.ndarray, floor_xy: tuple[float, float], yaw_deg: float, lift_z: float = 0.0) -> np.ndarray:
+def place(
+    joints: np.ndarray, floor_xy: tuple[float, float], yaw_deg: float, lift_z: float = 0.0
+) -> np.ndarray:
     """Body frame to world: rotate about the vertical, translate onto the floor."""
     angle = math.radians(yaw_deg)
     c, s = math.cos(angle), math.sin(angle)
@@ -317,6 +333,11 @@ def default_room(camera: SynthCamera | None = None) -> tuple[RoomConfig, SynthCa
         zones=zones,
         thresholds=Thresholds(),
         notes="Synthetic room used for the bundled samples and the evaluation harness.",
+        calibration=Calibration(
+            camera_height="synthetic",
+            focal_length="synthetic",
+            note="The camera that generated the scene, so its height and focal length are exact.",
+        ),
     )
     return room, cam
 
@@ -346,17 +367,23 @@ class _Builder:
         self.events.setdefault(name, self.t)
 
     def hold(self, joints_world: np.ndarray, seconds: float) -> None:
-        for _ in range(int(round(seconds * self.fps))):
+        for _ in range(round(seconds * self.fps)):
             self.world.append(joints_world.copy())
 
     def ramp(self, make, seconds: float) -> None:
-        n = max(1, int(round(seconds * self.fps)))
+        n = max(1, round(seconds * self.fps))
         for i in range(n):
             self.world.append(make(_ease((i + 1) / n)))
 
     def build(
-        self, name: str, description: str, room: RoomConfig, truth: dict[str, Any],
-        *, noise_px: float = 4.0, dropout: float = 0.04,
+        self,
+        name: str,
+        description: str,
+        room: RoomConfig,
+        truth: dict[str, Any],
+        *,
+        noise_px: float = 4.0,
+        dropout: float = 0.04,
     ) -> Sequence:
         frames: list[PoseFrame] = []
         for i, joints in enumerate(self.world):
@@ -384,10 +411,14 @@ def _walk(
     """A walk across the floor with a sway amplitude and a step cadence."""
     start_v, end_v = np.array(start), np.array(end)
     direction = end_v - start_v
-    heading = math.degrees(math.atan2(direction[1], direction[0])) if np.linalg.norm(direction) > 1e-6 else 0.0
+    heading = (
+        math.degrees(math.atan2(direction[1], direction[0]))
+        if np.linalg.norm(direction) > 1e-6
+        else 0.0
+    )
     normal = np.array([-direction[1], direction[0]])
     normal = normal / max(1e-6, float(np.linalg.norm(normal)))
-    n = max(1, int(round(seconds * builder.fps)))
+    n = max(1, round(seconds * builder.fps))
     phase = 0.0
     for i in range(n):
         u = (i + 1) / n
@@ -404,7 +435,11 @@ def _walk(
                 joints[idx, 0] += swing * sign * factor
                 joints[idx, 2] += max(0.0, swing * sign * factor) * 0.35
         builder.world.append(
-            place(joints, (float(position[0]), float(position[1])), yaw if yaw is not None else heading)
+            place(
+                joints,
+                (float(position[0]), float(position[1])),
+                yaw if yaw is not None else heading,
+            )
         )
 
 
@@ -429,7 +464,9 @@ def _bed_exit_core(builder: _Builder, *, lean_seconds: float = 1.6, settle_s: fl
     builder.ramp(
         lambda u: place(
             posture(lying=0.65 - 0.65 * u, knee_bend=0.9 * u, seat_height=BED_SURFACE_Z * u),
-            BED_XY, 0.0, lift_z=BED_SURFACE_Z * (1 - u),
+            BED_XY,
+            0.0,
+            lift_z=BED_SURFACE_Z * (1 - u),
         ),
         1.6,
     )
@@ -437,7 +474,8 @@ def _bed_exit_core(builder: _Builder, *, lean_seconds: float = 1.6, settle_s: fl
     builder.ramp(
         lambda u: place(
             posture(knee_bend=0.95, seat_height=BED_SURFACE_Z),
-            (BED_XY[0], BED_XY[1] + (BED_EDGE_XY[1] - BED_XY[1]) * u), 90.0,
+            (BED_XY[0], BED_XY[1] + (BED_EDGE_XY[1] - BED_XY[1]) * u),
+            90.0,
         ),
         1.4,
     )
@@ -449,7 +487,8 @@ def _bed_exit_core(builder: _Builder, *, lean_seconds: float = 1.6, settle_s: fl
     builder.ramp(
         lambda u: place(
             posture(knee_bend=0.95, seat_height=BED_SURFACE_Z, trunk_lean_deg=42.0 * u),
-            BED_EDGE_XY, 90.0,
+            BED_EDGE_XY,
+            90.0,
         ),
         lean_seconds,
     )
@@ -461,7 +500,8 @@ def _bed_exit_core(builder: _Builder, *, lean_seconds: float = 1.6, settle_s: fl
                 seat_height=BED_SURFACE_Z + (0.93 - BED_SURFACE_Z) * u,
                 trunk_lean_deg=42.0 * (1 - u),
             ),
-            (BED_EDGE_XY[0], BED_EDGE_XY[1] + 0.12 * u), 90.0,
+            (BED_EDGE_XY[0], BED_EDGE_XY[1] + 0.12 * u),
+            90.0,
         ),
         1.3,
     )
@@ -484,7 +524,15 @@ def scenario_bed_exit_steady(camera: SynthCamera, room: RoomConfig, fps: float, 
 def scenario_bed_exit_unsteady(camera: SynthCamera, room: RoomConfig, fps: float, rng) -> Sequence:
     b = _Builder(camera, fps, rng)
     _bed_exit_core(b, lean_seconds=2.0)
-    _walk(b, (BED_EDGE_XY[0], BED_EDGE_XY[1] + 0.12), DOOR_XY, 6.5, sway_cm=11.0, step_hz=1.1, jitter=0.05)
+    _walk(
+        b,
+        (BED_EDGE_XY[0], BED_EDGE_XY[1] + 0.12),
+        DOOR_XY,
+        6.5,
+        sway_cm=11.0,
+        step_hz=1.1,
+        jitter=0.05,
+    )
     return b.build(
         "bed-exit-unsteady",
         "The same exit, but the walk that follows is wide and irregular.",
@@ -496,7 +544,15 @@ def scenario_bed_exit_unsteady(camera: SynthCamera, room: RoomConfig, fps: float
 def scenario_bed_exit_to_floor(camera: SynthCamera, room: RoomConfig, fps: float, rng) -> Sequence:
     b = _Builder(camera, fps, rng)
     _bed_exit_core(b)
-    _walk(b, (BED_EDGE_XY[0], BED_EDGE_XY[1] + 0.12), (1.6, 2.2), 2.4, sway_cm=9.0, step_hz=1.2, jitter=0.05)
+    _walk(
+        b,
+        (BED_EDGE_XY[0], BED_EDGE_XY[1] + 0.12),
+        (1.6, 2.2),
+        2.4,
+        sway_cm=9.0,
+        step_hz=1.2,
+        jitter=0.05,
+    )
     b.mark("fall_starts")
     b.ramp(lambda u: place(posture(lying=u), (1.6, 2.2), 90.0), 0.8)
     b.mark("on_floor")
@@ -509,14 +565,18 @@ def scenario_bed_exit_to_floor(camera: SynthCamera, room: RoomConfig, fps: float
     )
 
 
-def scenario_settled(camera: SynthCamera, room: RoomConfig, fps: float, rng, loops: int = 1) -> Sequence:
+def scenario_settled(
+    camera: SynthCamera, room: RoomConfig, fps: float, rng, loops: int = 1
+) -> Sequence:
     b = _Builder(camera, fps, rng)
     lying = place(posture(lying=1.0), BED_XY, 0.0, lift_z=BED_SURFACE_Z)
     for _ in range(loops):
         b.hold(lying, 6.0)
         b.ramp(lambda u: place(posture(lying=1.0), BED_XY, 18.0 * u, lift_z=BED_SURFACE_Z), 1.5)
         b.hold(place(posture(lying=1.0), BED_XY, 18.0, lift_z=BED_SURFACE_Z), 6.0)
-        b.ramp(lambda u: place(posture(lying=1.0), BED_XY, 18.0 * (1 - u), lift_z=BED_SURFACE_Z), 1.5)
+        b.ramp(
+            lambda u: place(posture(lying=1.0), BED_XY, 18.0 * (1 - u), lift_z=BED_SURFACE_Z), 1.5
+        )
     b.hold(lying, 5.0)
     return b.build(
         "settled-turning-over",
@@ -526,7 +586,9 @@ def scenario_settled(camera: SynthCamera, room: RoomConfig, fps: float, rng, loo
     )
 
 
-def scenario_sit_up_and_lie_back(camera: SynthCamera, room: RoomConfig, fps: float, rng, loops: int = 1) -> Sequence:
+def scenario_sit_up_and_lie_back(
+    camera: SynthCamera, room: RoomConfig, fps: float, rng, loops: int = 1
+) -> Sequence:
     b = _Builder(camera, fps, rng)
     for _ in range(loops):
         _sit_up_cycle(b)
@@ -543,7 +605,9 @@ def _sit_up_cycle(b: _Builder) -> None:
     b.ramp(
         lambda u: place(
             posture(lying=1.0 - u, knee_bend=0.9 * u, seat_height=BED_SURFACE_Z * u),
-            BED_XY, 0.0, lift_z=BED_SURFACE_Z * (1 - u),
+            BED_XY,
+            0.0,
+            lift_z=BED_SURFACE_Z * (1 - u),
         ),
         1.8,
     )
@@ -551,22 +615,29 @@ def _sit_up_cycle(b: _Builder) -> None:
     b.ramp(
         lambda u: place(
             posture(lying=u, knee_bend=0.9 * (1 - u), seat_height=BED_SURFACE_Z * (1 - u)),
-            BED_XY, 0.0, lift_z=BED_SURFACE_Z * u,
+            BED_XY,
+            0.0,
+            lift_z=BED_SURFACE_Z * u,
         ),
         1.8,
     )
     b.hold(place(posture(lying=1.0), BED_XY, 0.0, lift_z=BED_SURFACE_Z), 4.0)
 
 
-def scenario_visitor_in_chair(camera: SynthCamera, room: RoomConfig, fps: float, rng, loops: int = 1) -> Sequence:
+def scenario_visitor_in_chair(
+    camera: SynthCamera, room: RoomConfig, fps: float, rng, loops: int = 1
+) -> Sequence:
     b = _Builder(camera, fps, rng)
     seated = place(posture(knee_bend=0.95, seat_height=0.46), (3.5, 1.35), 200.0)
     for _ in range(loops):
         b.hold(seated, 8.0)
         b.ramp(
             lambda u: place(
-                posture(knee_bend=0.95, seat_height=0.46, trunk_lean_deg=12.0 * math.sin(u * math.pi)),
-                (3.5, 1.35), 200.0,
+                posture(
+                    knee_bend=0.95, seat_height=0.46, trunk_lean_deg=12.0 * math.sin(u * math.pi)
+                ),
+                (3.5, 1.35),
+                200.0,
             ),
             3.0,
         )
@@ -579,7 +650,181 @@ def scenario_visitor_in_chair(camera: SynthCamera, room: RoomConfig, fps: float,
     )
 
 
-def scenario_steady_walk(camera: SynthCamera, room: RoomConfig, fps: float, rng, loops: int = 1) -> Sequence:
+CHAIR_SEAT_XY = (3.55, 1.6)
+CHAIR_YAW = 90.0
+"""Hips over the part of the chair clear of the bed, facing the room, so the
+feet land on open floor rather than inside a drawn zone."""
+CHAIR_SEAT_Z = 0.46
+CHAIR_THIGH_M = 0.44
+CHAIR_FEET_TUCK_M = 0.12
+CHAIR_SHOULDERS_AHEAD_M = 0.10
+
+
+def _chair_feet() -> tuple[float, float]:
+    yaw = math.radians(CHAIR_YAW)
+    return (
+        CHAIR_SEAT_XY[0] + CHAIR_THIGH_M * 0.95 * math.cos(yaw),
+        CHAIR_SEAT_XY[1] + CHAIR_THIGH_M * 0.95 * math.sin(yaw),
+    )
+
+
+def _tuck_feet(joints: np.ndarray, bend: float) -> np.ndarray:
+    """Draw the feet back under the knees, as people do to get out of a low chair.
+
+    `posture` keeps the shank vertical. Nobody sits down or stands up like that:
+    the feet come back under the seat so the centre of mass can pass over them,
+    and the CDC chair-stand footage shows exactly that. Body frame, so +x is
+    forward.
+    """
+    out = joints.copy()
+    for name in ("left ankle", "right ankle"):
+        out[KEYPOINT_NAMES.index(name), 0] -= CHAIR_FEET_TUCK_M * bend / 0.95
+    return out
+
+
+def _lowering_onto_chair(b: _Builder, seconds: float = 1.3) -> None:
+    """Standing at the chair to seated in it, the way people actually sit down.
+
+    The feet stay planted while the hips go back and down onto the seat. The
+    trunk leans forward far enough to keep the shoulders over the feet -- that
+    lean is what keeps the centre of mass over the base of support -- and comes
+    back upright once the seat has the weight. Geometrically, this is the same
+    shape as the lean before standing up; only the direction the hips travel
+    tells them apart.
+    """
+    feet, yaw = _chair_feet(), math.radians(CHAIR_YAW)
+    trunk = STANDING_BODY["left shoulder"][2] - STANDING_BODY["left hip"][2]
+
+    def lowering(u: float) -> np.ndarray:
+        bend = 0.95 * u
+        back = CHAIR_THIGH_M * bend - CHAIR_FEET_TUCK_M * bend / 0.95
+        hips = (feet[0] - back * math.cos(yaw), feet[1] - back * math.sin(yaw))
+        # Shoulders carried out over the feet on the way down, as in the footage.
+        lean = math.degrees(math.asin(min(0.95, (back + CHAIR_SHOULDERS_AHEAD_M * u) / trunk)))
+        joints = _tuck_feet(
+            posture(
+                knee_bend=bend, seat_height=0.93 + (CHAIR_SEAT_Z - 0.93) * u, trunk_lean_deg=lean
+            ),
+            bend,
+        )
+        return place(joints, hips, CHAIR_YAW)
+
+    b.mark("sit_down_starts")
+    b.ramp(lowering, seconds)
+    landed = math.degrees(
+        math.asin(
+            min(0.95, (CHAIR_THIGH_M * 0.95 - CHAIR_FEET_TUCK_M + CHAIR_SHOULDERS_AHEAD_M) / trunk)
+        )
+    )
+    b.ramp(
+        lambda u: place(
+            _tuck_feet(
+                posture(knee_bend=0.95, seat_height=CHAIR_SEAT_Z, trunk_lean_deg=landed * (1 - u)),
+                0.95,
+            ),
+            _seat_xy(),
+            CHAIR_YAW,
+        ),
+        0.8,
+    )
+
+
+def _seat_xy() -> tuple[float, float]:
+    """Where the hips are when seated with the feet tucked, feet unmoved."""
+    feet, yaw = _chair_feet(), math.radians(CHAIR_YAW)
+    back = CHAIR_THIGH_M * 0.95 - CHAIR_FEET_TUCK_M
+    return (feet[0] - back * math.cos(yaw), feet[1] - back * math.sin(yaw))
+
+
+def _seated_in_chair() -> np.ndarray:
+    return place(
+        _tuck_feet(posture(knee_bend=0.95, seat_height=CHAIR_SEAT_Z), 0.95), _seat_xy(), CHAIR_YAW
+    )
+
+
+def scenario_sit_down_in_chair(camera: SynthCamera, room: RoomConfig, fps: float, rng) -> Sequence:
+    """Walk to the chair and sit down in it. Nothing to call.
+
+    Added after real footage (the CDC chair-stand clips, see `docs/evaluation.md`)
+    showed the rise rule firing as someone sat *down*: to lower yourself onto a
+    seat you lean forward over your feet with your knees bent, which from one
+    camera is the same shape as the lean that comes before standing up.
+    """
+    b = _Builder(camera, fps, rng)
+    feet = _chair_feet()
+    approach = (feet[0] - 2.2, feet[1] + 0.9)
+    _walk(b, approach, feet, 2.6, sway_cm=1.8, step_hz=1.8)
+    heading = math.degrees(math.atan2(feet[1] - approach[1], feet[0] - approach[0]))
+    b.ramp(lambda u: place(posture(), feet, heading + (CHAIR_YAW - heading) * u), 0.9)
+    b.hold(place(posture(), feet, CHAIR_YAW), 0.5)
+    _lowering_onto_chair(b)
+    b.hold(_seated_in_chair(), 8.0)
+    return b.build(
+        "sit-down-in-chair",
+        "Someone walks to the chair and sits down in it, leaning forward on the way down. "
+        "No call should be raised.",
+        room,
+        {"should_call": False, "expect_state": "watch", "expect_unsteady": False},
+    )
+
+
+def scenario_chair_stand_and_sit_back(
+    camera: SynthCamera, room: RoomConfig, fps: float, rng
+) -> Sequence:
+    """Up out of the chair, a moment on the feet, and straight back down.
+
+    The shape of the CDC chair-stand clip that exposed the sit-down false call:
+    the rise is a real call and has a lead time; the sit-down a second later must
+    not raise a second one. `truth["events"]["sit_down_starts"]` is what the
+    evaluation grades that against.
+    """
+    b = _Builder(camera, fps, rng)
+    feet, yaw = _chair_feet(), math.radians(CHAIR_YAW)
+    seat = _seat_xy()
+    back = CHAIR_THIGH_M * 0.95 - CHAIR_FEET_TUCK_M
+    b.hold(_seated_in_chair(), 4.0)
+    b.mark("lean_starts")
+    b.ramp(
+        lambda u: place(
+            _tuck_feet(
+                posture(knee_bend=0.95, seat_height=CHAIR_SEAT_Z, trunk_lean_deg=45.0 * u), 0.95
+            ),
+            seat,
+            CHAIR_YAW,
+        ),
+        1.2,
+    )
+
+    def rising(u: float) -> np.ndarray:
+        bend = 0.95 * (1 - u)
+        still_back = back * (1 - u)
+        hips = (feet[0] - still_back * math.cos(yaw), feet[1] - still_back * math.sin(yaw))
+        joints = posture(
+            knee_bend=bend,
+            seat_height=CHAIR_SEAT_Z + (0.93 - CHAIR_SEAT_Z) * u,
+            trunk_lean_deg=45.0 * (1 - u),
+        )
+        return place(_tuck_feet(joints, bend), hips, CHAIR_YAW)
+
+    b.ramp(rising, 1.0)
+    b.mark("standing")
+    # Upright with the hips pushed through, shoulders a touch behind the feet, as
+    # the woman in the CDC footage stands between repetitions.
+    b.hold(place(posture(trunk_lean_deg=-6.0), feet, CHAIR_YAW), 0.8)
+    _lowering_onto_chair(b)
+    b.hold(_seated_in_chair(), 8.0)
+    return b.build(
+        "chair-stand-and-sit-back",
+        "A patient stands up from the chair, stays on their feet for a moment and sits "
+        "straight back down. One call for the rise; none for the sit-down.",
+        room,
+        {"should_call": True, "expect_state": "rising soon", "expect_unsteady": False},
+    )
+
+
+def scenario_steady_walk(
+    camera: SynthCamera, room: RoomConfig, fps: float, rng, loops: int = 1
+) -> Sequence:
     b = _Builder(camera, fps, rng)
     for _ in range(loops):
         _walk(b, (3.4, 2.6), (1.0, 1.0), 5.0, sway_cm=1.8, step_hz=1.9)
@@ -615,7 +860,9 @@ def scenario_curtain_drawn(camera: SynthCamera, room: RoomConfig, fps: float, rn
     b.ramp(
         lambda u: place(
             posture(lying=1.0 - u, knee_bend=0.9 * u, seat_height=BED_SURFACE_Z * u),
-            BED_XY, 0.0, lift_z=BED_SURFACE_Z * (1 - u),
+            BED_XY,
+            0.0,
+            lift_z=BED_SURFACE_Z * (1 - u),
         ),
         2.0,
     )
@@ -649,7 +896,9 @@ def scenario_personal_care(camera: SynthCamera, room: RoomConfig, fps: float, rn
     b.ramp(
         lambda u: place(
             posture(lying=1.0 - u, knee_bend=0.9 * u, seat_height=BED_SURFACE_Z * u),
-            BED_XY, 0.0, lift_z=BED_SURFACE_Z * (1 - u),
+            BED_XY,
+            0.0,
+            lift_z=BED_SURFACE_Z * (1 - u),
         ),
         1.5,
     )
@@ -664,9 +913,7 @@ def scenario_personal_care(camera: SynthCamera, room: RoomConfig, fps: float, rn
         room,
         {"should_call": False, "expect_state": "paused", "expect_unsteady": False},
     )
-    sequence.view_hints = {
-        i: "paused for personal care" for i in range(paused_from, paused_to)
-    }
+    sequence.view_hints = {i: "paused for personal care" for i in range(paused_from, paused_to)}
     return sequence
 
 
@@ -679,6 +926,8 @@ SCENARIOS = {
     "settled-turning-over": scenario_settled,
     "sat-up-and-lay-back": scenario_sit_up_and_lie_back,
     "visitor-in-chair": scenario_visitor_in_chair,
+    "sit-down-in-chair": scenario_sit_down_in_chair,
+    "chair-stand-and-sit-back": scenario_chair_stand_and_sit_back,
     "steady-walk": scenario_steady_walk,
     "unsteady-walk": scenario_unsteady_walk,
 }

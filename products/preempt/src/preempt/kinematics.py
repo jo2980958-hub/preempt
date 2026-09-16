@@ -10,7 +10,7 @@ Quantities produced per frame, all with units:
 | name | unit | how |
 |---|---|---|
 | `floor_xy` | m | ankle midpoint back-projected through the floor homography |
-| `torso_floor` | m | the hips' shadow on the floor, given their measured height |
+| `torso_floor` | m | the hips' shadow on the floor, or the feet where that is ill-conditioned |
 | `hip_height` | m | single-view metrology from the foot contact point |
 | `head_height` | m | same, to the head |
 | `body_axis_deg` | deg from vertical | ankles to head, the strongest posture cue |
@@ -343,6 +343,42 @@ def foot_contact_point(pose: PoseFrame, min_score: float) -> np.ndarray | None:
     return pose.xy[idx]
 
 
+SHADOW_M_PER_PX_MAX = 0.03
+"""The most a one-pixel hip error may move the torso's floor position.
+
+RTMPose's keypoints are good to about 4 px here, so this holds the torso position
+to about 12 cm, which is the size of a sway the gait score cares about. The
+synthetic ward camera, 2.55 m up in a corner, sits at 0.005 to 0.014 m/px. The
+CDC chair-stand cameras, at about hip height, sit at 0.05 to 0.1 m/px with the
+person seated and 0.2 to 2,500 m/px with them standing."""
+
+
+def shadow_if_well_conditioned(
+    frame: FloorFrame, hip: np.ndarray, height_m: float
+) -> np.ndarray | None:
+    """The hips' floor position, or None where one pixel would move it too far.
+
+    The shadow of a point is found by sliding down the vertical from it by its
+    height. When the camera is at about the height of that point, the ray to it
+    is nearly level and the construction is singular: a pixel of keypoint noise
+    moves the answer metres, or tens of metres. On the CDC chair-stand footage
+    (a camera at 0.81 m, hips at 0.86 m standing) the torso jumped to 25 m away
+    and back between frames, the Kalman filter read that as 16 m/s, and a woman
+    standing still was reported as walking. So the conditioning is measured, not
+    assumed, and a badly conditioned shadow falls back to the feet, which are on
+    the floor and so are always well placed.
+    """
+    shadow = frame.floor_shadow(hip, height_m)
+    if shadow is None or np.isnan(shadow).any():
+        return None
+    nudged = frame.floor_shadow(np.asarray(hip, dtype=np.float64) + np.array([0.0, 1.0]), height_m)
+    if nudged is None or np.isnan(nudged).any():
+        return None
+    if float(np.linalg.norm(nudged - shadow)) > SHADOW_M_PER_PX_MAX:
+        return None
+    return shadow
+
+
 class ComTracker:
     """A constant-velocity Kalman filter on the floor-plane centre of mass.
 
@@ -357,9 +393,7 @@ class ComTracker:
 
     def __init__(self, process_noise: float = 1e-2, measurement_noise: float = 4e-3) -> None:
         self.kf = cv2.KalmanFilter(4, 2, 0, cv2.CV_64F)
-        self.kf.measurementMatrix = np.array(
-            [[1, 0, 0, 0], [0, 1, 0, 0]], dtype=np.float64
-        )
+        self.kf.measurementMatrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], dtype=np.float64)
         self.kf.processNoiseCov = np.eye(4, dtype=np.float64) * process_noise
         self.kf.measurementNoiseCov = np.eye(2, dtype=np.float64) * measurement_noise
         self.kf.errorCovPost = np.eye(4, dtype=np.float64)
@@ -371,7 +405,9 @@ class ComTracker:
             [[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]], dtype=np.float64
         )
 
-    def update(self, position: np.ndarray | None, time_s: float) -> tuple[np.ndarray, np.ndarray] | None:
+    def update(
+        self, position: np.ndarray | None, time_s: float
+    ) -> tuple[np.ndarray, np.ndarray] | None:
         """Returns (position, velocity) in metres and m/s, or None before the first fix."""
         dt = 1.0 / 30.0 if self._last_t is None else max(1e-3, time_s - self._last_t)
         self._last_t = time_s
@@ -389,9 +425,7 @@ class ComTracker:
             return position.copy(), np.zeros(2)
         self.kf.transitionMatrix = self._transition(dt)
         self.kf.predict()
-        corrected = self.kf.correct(
-            np.array([[position[0]], [position[1]]], dtype=np.float64)
-        )
+        corrected = self.kf.correct(np.array([[position[0]], [position[1]]], dtype=np.float64))
         return corrected[:2, 0].copy(), corrected[2:, 0].copy()
 
 
@@ -435,8 +469,8 @@ class Kinematics:
         # because it assumed the hips were above the feet -- true to a few
         # centimetres when standing, which is the only time this is used.
         if hip is not None and out.hip_height is not None:
-            shadow = self.frame.floor_shadow(hip, out.hip_height)
-            if shadow is not None and not np.isnan(shadow).any():
+            shadow = shadow_if_well_conditioned(self.frame, hip, out.hip_height)
+            if shadow is not None:
                 out.torso_floor = shadow
         if out.torso_floor is None:
             out.torso_floor = out.floor_xy
@@ -450,9 +484,7 @@ class Kinematics:
             pose, self.frame, min_score, out.floor_xy
         )
         out.knee_deg = knee_angle_deg(pose, min_score)
-        out.body_axis_deg = body_axis_deg(
-            pose, self.frame, min_score, contact, out.floor_xy
-        )
+        out.body_axis_deg = body_axis_deg(pose, self.frame, min_score, contact, out.floor_xy)
         out.lean_offset = lean_offset(pose, self.frame, min_score, contact, out.floor_xy)
         out.floor_consistency, out.floor_spread = floor_consistency(
             pose, self.frame, min_score, out.floor_xy

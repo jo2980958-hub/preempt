@@ -151,17 +151,18 @@ def stance_onsets(gaps: np.ndarray, times: np.ndarray) -> list[float]:
     threshold = float(np.median(smoothed))
     onsets: list[float] = []
     for i in range(1, smoothed.size - 1):
-        if smoothed[i] >= smoothed[i - 1] and smoothed[i] > smoothed[i + 1]:
-            if smoothed[i] >= threshold:
-                if not onsets or times[i] - onsets[-1] > 0.25:
-                    onsets.append(float(times[i]))
+        peak = smoothed[i] >= smoothed[i - 1] and smoothed[i] > smoothed[i + 1]
+        if peak and smoothed[i] >= threshold and (not onsets or times[i] - onsets[-1] > 0.25):
+            onsets.append(float(times[i]))
     return onsets
 
 
 class GaitWindow:
     """A sliding window of body states, scored on demand."""
 
-    def __init__(self, thresholds: Thresholds, frame: FloorFrame, walls: tuple[Zone, ...] = ()) -> None:
+    def __init__(
+        self, thresholds: Thresholds, frame: FloorFrame, walls: tuple[Zone, ...] = ()
+    ) -> None:
         self.t = thresholds
         self.frame = frame
         self.walls = walls
@@ -226,8 +227,10 @@ class GaitWindow:
 
         gaps = np.array([s.ankle_gap_m for s in usable if s.ankle_gap_m is not None])
         gap_times = np.array([s.time_s for s in usable if s.ankle_gap_m is not None])
-        onsets = stance_onsets(gaps, gap_times) if gaps.size == times.size else (
-            stance_onsets(gaps, gap_times) if gaps.size >= 5 else []
+        onsets = (
+            stance_onsets(gaps, gap_times)
+            if gaps.size == times.size
+            else (stance_onsets(gaps, gap_times) if gaps.size >= 5 else [])
         )
         intervals = np.diff(np.array(onsets)) if len(onsets) >= 2 else np.array([])
 

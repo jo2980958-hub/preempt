@@ -5,9 +5,7 @@ from __future__ import annotations
 import cv2
 import numpy as np
 import pytest
-
-from preempt.config import Thresholds, Zone
-from preempt.geometry import FloorFrame, corridor_polygon, polygon_centroid, zone_floor_polygon
+from preempt.geometry import FloorFrame, polygon_centroid, zone_floor_polygon
 from preempt.hazards import (
     AID_OUT_OF_REACH,
     CLUTTER,
@@ -16,7 +14,6 @@ from preempt.hazards import (
     check_aid_reach,
     find_clutter,
     find_wet_floor_sign,
-    floor_area_cm2,
 )
 from preempt.synth import default_room
 
@@ -74,7 +71,7 @@ def test_the_walking_route_runs_from_the_bed_to_the_door(scanner):
 
 
 def test_a_bag_left_on_the_route_is_found_and_measured(room_and_camera, scanner):
-    room, camera = room_and_camera
+    _room, camera = room_and_camera
     reference = empty_room(camera)
     scanner.set_reference(reference)
     corridor = scanner.corridor()
@@ -88,7 +85,7 @@ def test_a_bag_left_on_the_route_is_found_and_measured(room_and_camera, scanner)
 
 
 def test_a_bag_well_off_the_route_is_not_called_a_hazard(room_and_camera, scanner):
-    room, camera = room_and_camera
+    _room, camera = room_and_camera
     reference = empty_room(camera)
     scanner.set_reference(reference)
     corridor = scanner.corridor()
@@ -98,7 +95,7 @@ def test_a_bag_well_off_the_route_is_not_called_a_hazard(room_and_camera, scanne
 
 
 def test_the_person_is_not_mistaken_for_clutter(room_and_camera, scanner):
-    room, camera = room_and_camera
+    _room, camera = room_and_camera
     reference = empty_room(camera)
     corridor = scanner.corridor()
     centre = polygon_centroid(corridor)
@@ -112,7 +109,7 @@ def test_the_person_is_not_mistaken_for_clutter(room_and_camera, scanner):
 
 
 def test_a_wet_floor_sign_on_the_route_is_recognised(room_and_camera, scanner):
-    room, camera = room_and_camera
+    _room, camera = room_and_camera
     frame = empty_room(camera)
     corridor = scanner.corridor()
     centre = polygon_centroid(corridor)
@@ -128,7 +125,7 @@ def test_a_wet_floor_sign_on_the_route_is_recognised(room_and_camera, scanner):
 
 
 def test_beige_furniture_is_not_a_wet_floor_sign(room_and_camera, scanner):
-    room, camera = room_and_camera
+    _room, camera = room_and_camera
     frame = empty_room(camera)
     corridor = scanner.corridor()
     centre = polygon_centroid(corridor)
@@ -163,7 +160,7 @@ def test_a_walking_frame_beside_the_bed_is_not_a_hazard(room_and_camera, scanner
 
 
 def test_the_scanner_says_what_it_checked_and_what_it_skipped(room_and_camera, scanner):
-    room, camera = room_and_camera
+    _room, camera = room_and_camera
     report = scanner.scan(empty_room(camera), 0.0, seat_floor_xy=np.array([1.9, 1.55]), force=True)
     assert "clutter on the route" in report.checked
     assert "walking frame within reach" in report.checked
@@ -172,9 +169,7 @@ def test_the_scanner_says_what_it_checked_and_what_it_skipped(room_and_camera, s
 
 def test_a_room_without_a_door_zone_refuses_to_invent_a_route(room_and_camera):
     room, camera = room_and_camera
-    scanner = HazardScanner(
-        FloorFrame(room.floor), room.thresholds, bed_zones=room.zones_of("bed")
-    )
+    scanner = HazardScanner(FloorFrame(room.floor), room.thresholds, bed_zones=room.zones_of("bed"))
     report = scanner.scan(empty_room(camera), 0.0, force=True)
     assert scanner.corridor() is None
     assert any("walking route" in s for s in report.skipped)

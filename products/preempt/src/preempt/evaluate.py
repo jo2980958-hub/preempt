@@ -61,6 +61,8 @@ class Outcome:
     duration_s: float
     correct: bool
     note: str = ""
+    sit_down_calls: int = 0
+    """Clinical calls raised after the person began to sit back down."""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -74,6 +76,7 @@ class Outcome:
             "duration_s": round(self.duration_s, 1),
             "correct": self.correct,
             "note": self.note,
+            "sit_down_calls": self.sit_down_calls,
         }
 
 
@@ -114,6 +117,7 @@ class Report:
                 "max": round(max(leads), 2) if leads else None,
             },
             "false_alarms": len(false_alarms),
+            "sit_down_false_calls": sum(o.sit_down_calls for o in self.outcomes),
             "quiet_hours_observed": round(quiet_hours, 4),
             "false_alarms_per_bed_night": (
                 round(len(false_alarms) / quiet_hours * 12.0, 2) if quiet_hours > 0 else None
@@ -136,13 +140,33 @@ def _grade(name: str, analysis, truth: dict[str, Any]) -> Outcome:
     peak = analysis.peak.risk.state if analysis.peak else "settled"
     duration = analysis.moments[-1].time_s if analysis.moments else 0.0
 
+    # A sequence where the person sits back down after standing has a positive
+    # (the rise) and a negative (the sit-down) in it. Graded per sequence, a call on
+    # the sit-down would hide behind the correct call on the rise, which is how a
+    # false call on every sit-down went unnoticed until real footage showed it.
+    sit_down = truth.get("events", {}).get("sit_down_starts")
+    sit_down_calls = (
+        sum(1 for c in analysis.calls if c["rung"] in CALL_RUNGS and c["time_s"] >= sit_down)
+        if sit_down is not None
+        else 0
+    )
+
     note = ""
-    if should_call and not called:
+    if sit_down_calls and should_call:
+        correct, note = False, f"{sit_down_calls} call(s) raised as the person sat back down"
+    elif should_call and not called:
         correct, note = False, "no call was raised on a sequence that needed one"
     elif not should_call and called:
-        correct, note = False, f"called at {analysis.calls[0]['time_s']:.1f} s with nothing happening"
+        correct, note = (
+            False,
+            f"called at {analysis.calls[0]['time_s']:.1f} s with nothing happening",
+        )
     elif should_call and expected and peak != expected:
-        correct = peak in (RISING_SOON, UNSTEADY, FLOOR) and expected in (RISING_SOON, UNSTEADY, FLOOR)
+        correct = peak in (RISING_SOON, UNSTEADY, FLOOR) and expected in (
+            RISING_SOON,
+            UNSTEADY,
+            FLOOR,
+        )
         if not correct:
             note = f"called, but reached {peak!r} where {expected!r} was expected"
         else:
@@ -160,6 +184,7 @@ def _grade(name: str, analysis, truth: dict[str, Any]) -> Outcome:
         duration_s=duration,
         correct=correct,
         note=note,
+        sit_down_calls=sit_down_calls,
     )
 
 
@@ -252,9 +277,7 @@ def run_urfall(
         analysis = pipeline.run_images(images, fps=fps)
         truth_frames = labels.get(name, {})
         truth_s = _first_lying_second(truth_frames, fps)
-        floor_moment = next(
-            (m.time_s for m in analysis.moments if m.risk.state == FLOOR), None
-        )
+        floor_moment = next((m.time_s for m in analysis.moments if m.risk.state == FLOOR), None)
         is_fall = name.startswith("fall")
         detections.append(
             {
@@ -283,7 +306,9 @@ def run_urfall(
                 calls=len(analysis.calls),
                 duration_s=len(images) / fps,
                 correct=(floor_moment is not None) == is_fall,
-                note="" if (floor_moment is not None) == is_fall else (
+                note=""
+                if (floor_moment is not None) == is_fall
+                else (
                     "no on-the-floor state on a fall sequence"
                     if is_fall
                     else "on-the-floor state on an activity-of-daily-living sequence"

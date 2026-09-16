@@ -13,19 +13,28 @@ let samples = [];
 let chosen = FIRST;
 let upload = null;
 let onPick = () => {};
+let onVideo = () => {};
 
 export const currentSample = () => chosen;
 export const currentUpload = () => upload;
+export const isTrack = (file) => /\.json$/i.test(file?.name || '');
 
-export function mountPicker(handler) {
+/**
+ * A bundled sample or a pose track runs as soon as it is picked: each carries its
+ * own room. A video does not. It stops at the room preview, because a video
+ * measured against the wrong room gives wrong heights that look like right ones.
+ */
+export function mountPicker(handler, videoHandler) {
   onPick = handler;
+  onVideo = videoHandler;
   ui.file.addEventListener('change', () => {
     upload = ui.file.files?.[0] || null;
     if (!upload) return;
     ui.samples.querySelectorAll('.sample').forEach((b) => b.setAttribute('aria-pressed', 'false'));
-    ui.startLabel.textContent = 'Watch this video';
+    ui.startLabel.textContent = isTrack(upload) ? 'Watch this track' : 'Watch this video';
     ui.startNote.textContent = `${upload.name}, ${bytes(upload.size)}`;
-    onPick();
+    if (isTrack(upload)) onPick();
+    else onVideo(upload);
   });
 }
 
@@ -56,6 +65,7 @@ function choose(name) {
   chosen = name;
   upload = null;
   ui.file.value = '';
+  ui.preview.hidden = true;
   ui.samples.querySelectorAll('.sample').forEach((b) =>
     b.setAttribute('aria-pressed', String(b.dataset.name === name)));
   const s = samples.find((x) => x.name === name);

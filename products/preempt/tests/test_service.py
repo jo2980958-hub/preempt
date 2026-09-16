@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import cv2
 import pytest
 from fastapi.testclient import TestClient
-
 from preempt.service import create
 
 
@@ -134,3 +136,138 @@ def test_the_product_serves_its_own_front_end_and_not_the_shared_shell(client):
     assert 'data-demo="start"' in body
     for asset in ("/assets/css/app.css", "/assets/js/app.js"):
         assert client.get(asset).status_code == 200, f"{asset} is not being served"
+
+
+# --- a job can bring its own room --------------------------------------------
+
+CDC_ROOM = json.loads(
+    (Path(__file__).parent / "data" / "cdc_chair_stand_oblique.track.json").read_text()
+)["room"]
+
+
+def _tiny_clip(tmp_path) -> bytes:
+    import numpy as np
+
+    path = tmp_path / "clip.mp4"
+    writer = cv2.VideoWriter(str(path), cv2.VideoWriter.fourcc(*"mp4v"), 10.0, (320, 240))
+    rng = np.random.default_rng(9)
+    for _ in range(6):
+        writer.write(rng.integers(0, 255, (240, 320, 3), dtype=np.uint8))
+    writer.release()
+    return path.read_bytes()
+
+
+def test_a_video_with_no_room_says_it_used_the_default(client, tmp_path):
+    response = client.post(
+        "/api/jobs", files={"file": ("clip.mp4", _tiny_clip(tmp_path), "video/mp4")}
+    )
+    result = _await_job(client, response.json()["job_id"])
+    setup = result["input"]["room_setup"]
+    assert setup["source"] == "default"
+    assert setup["name"] == "side room 4"
+    assert setup["calibration"]["camera_height"] == "synthetic"
+
+
+def test_a_room_in_the_params_is_the_room_the_video_is_measured_against(client, tmp_path):
+    response = client.post(
+        "/api/jobs",
+        files={"file": ("clip.mp4", _tiny_clip(tmp_path), "video/mp4")},
+        data={"params": json.dumps({"room": CDC_ROOM})},
+    )
+    assert response.status_code == 202, response.text
+    result = _await_job(client, response.json()["job_id"])
+    setup = result["input"]["room_setup"]
+    assert setup["source"] == "uploaded"
+    assert setup["name"] == CDC_ROOM["room"]
+    assert setup["calibration"] == {**CDC_ROOM["calibration"], "calibrated": False}
+    assert "room" not in result["params"], "the room belongs in input, not repeated in params"
+
+
+def test_a_room_file_beside_the_video_works_the_same_way(client, tmp_path):
+    response = client.post(
+        "/api/jobs",
+        files={
+            "file": ("clip.mp4", _tiny_clip(tmp_path), "video/mp4"),
+            "room": ("room.json", json.dumps(CDC_ROOM).encode(), "application/json"),
+        },
+    )
+    assert response.status_code == 202, response.text
+    result = _await_job(client, response.json()["job_id"])
+    assert result["input"]["room_setup"]["name"] == CDC_ROOM["room"]
+    captions = " ".join(e["caption"] for e in result["evidence"])
+    assert "camera height assumed" in captions
+
+
+@pytest.mark.parametrize(
+    ("mutate", "field"),
+    [
+        (
+            lambda r: r["floor"].update(image_points=r["floor"]["image_points"][:3]),
+            "floor.image_points",
+        ),
+        (lambda r: r.pop("floor"), "floor"),
+        (lambda r: r["zones"][0].update(kind="sofa"), "zones[0].kind"),
+        (
+            lambda r: r["thresholds"].update(stand_hip_height_m="tall"),
+            "thresholds.stand_hip_height_m",
+        ),
+        (lambda r: r["calibration"].update(camera_height="guessed"), "calibration.camera_height"),
+        (lambda r: r.update(privacy_mode="diagnostic"), "privacy_mode"),
+    ],
+)
+def test_an_invalid_room_is_a_400_naming_the_field(client, tmp_path, mutate, field):
+    room = json.loads(json.dumps(CDC_ROOM))
+    mutate(room)
+    response = client.post(
+        "/api/jobs",
+        files={"file": ("clip.mp4", _tiny_clip(tmp_path), "video/mp4")},
+        data={"params": json.dumps({"room": room})},
+    )
+    assert response.status_code == 400, response.text
+    error = response.json()["error"]
+    assert error["details"]["field"] == field
+    assert field in error["message"]
+
+
+def test_a_room_that_is_not_json_is_a_400(client, tmp_path):
+    response = client.post(
+        "/api/jobs",
+        files={
+            "file": ("clip.mp4", _tiny_clip(tmp_path), "video/mp4"),
+            "room": ("room.json", b"{not json", "application/json"),
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["error"]["details"]["field"] == "room"
+
+
+def test_a_room_sent_twice_or_with_a_pose_track_is_refused(client, tmp_path):
+    twice = client.post(
+        "/api/jobs",
+        files={
+            "file": ("clip.mp4", _tiny_clip(tmp_path), "video/mp4"),
+            "room": ("room.json", json.dumps(CDC_ROOM).encode(), "application/json"),
+        },
+        data={"params": json.dumps({"room": CDC_ROOM})},
+    )
+    assert twice.status_code == 400
+    track = (Path(__file__).parents[1] / "samples" / "bed-exit-steady.json").read_bytes()
+    with_track = client.post(
+        "/api/jobs",
+        files={"file": ("bed-exit-steady.json", track, "application/json")},
+        data={"params": json.dumps({"room": CDC_ROOM})},
+    )
+    assert with_track.status_code == 400
+    assert "pose track" in with_track.json()["error"]["message"]
+
+
+def test_the_room_check_and_default_room_routes_feed_the_preview(client):
+    default = client.get("/api/rooms/default").json()
+    assert default["summary"]["source"] == "default"
+    assert len(default["room"]["floor"]["image_points"]) == 4
+    checked = client.post("/api/rooms/check", content=json.dumps(CDC_ROOM))
+    assert checked.status_code == 200
+    assert checked.json()["summary"]["calibration"]["calibrated"] is False
+    bad = client.post("/api/rooms/check", content=b'{"floor": {}}')
+    assert bad.status_code == 400
+    assert bad.json()["error"]["details"]["field"] == "floor.image_points"

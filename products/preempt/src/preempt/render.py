@@ -26,13 +26,13 @@ from .config import Zone
 from .geometry import FloorFrame
 from .pose import KEYPOINT_NAMES, SKELETON, PoseFrame
 
-GROUND = (251, 246, 247)      # #F7F6FB in BGR
+GROUND = (251, 246, 247)  # #F7F6FB in BGR
 SURFACE = (255, 255, 255)
-RAISED = (247, 237, 239)      # #EFEDF7
-INK = (46, 27, 28)            # #1C1B2E
-INK_DIM = (128, 87, 90)       # #5A5780
-INDIGO = (144, 51, 59)        # #3B3390
-ROSE = (74, 23, 176)          # #B0174A
+RAISED = (247, 237, 239)  # #EFEDF7
+INK = (46, 27, 28)  # #1C1B2E
+INK_DIM = (128, 87, 90)  # #5A5780
+INDIGO = (144, 51, 59)  # #3B3390
+ROSE = (74, 23, 176)  # #B0174A
 OK_GREEN = (110, 140, 60)
 
 ZONE_COLOUR = {
@@ -142,6 +142,7 @@ def pose_card(
     height: int = 520,
     alert: bool = False,
     footer: str = "",
+    subfooter: str = "",
     source_size: tuple[int, int] | None = None,
 ) -> np.ndarray:
     """The evidence image: the figure, the state, and the reasons. No photograph.
@@ -160,7 +161,9 @@ def pose_card(
     cv2.rectangle(canvas, (16, field_top), (width - 16, field_top + field_height), SURFACE, -1)
 
     if pose is None:
-        _text(canvas, (32, field_top + field_height // 2), "no pose in this frame", INK_DIM, 16, True)
+        _text(
+            canvas, (32, field_top + field_height // 2), "no pose in this frame", INK_DIM, 16, True
+        )
     else:
         seen = pose.scores > 0
         pts = pose.xy[seen]
@@ -175,12 +178,14 @@ def pose_card(
             draw_figure(canvas, pose, 0.30, colour=INK, scale=scale, origin=origin)
 
     y = field_top + field_height + 26
-    for reason in reasons[:4]:
+    for reason in reasons[: 3 if subfooter else 4]:
         cv2.circle(canvas, (26, y - 5), 3, accent, -1, cv2.LINE_AA)
         _text(canvas, (40, y), reason[:96], INK_DIM, 15)
         y += 24
     if footer:
-        _text(canvas, (22, height - 14), footer, INK_DIM, 13, True)
+        _text(canvas, (22, height - (34 if subfooter else 14)), footer, INK_DIM, 13, True)
+    if subfooter:
+        _text(canvas, (22, height - 14), subfooter[:100], INK_DIM, 13, True)
     return canvas
 
 
@@ -192,21 +197,24 @@ def plan_card(
     corridor: list[list[float]] | None = None,
     hazards: list[tuple[float, float]] = (),
     title: str = "Room",
+    subtitle: str = "",
     width: int = 720,
     height: int = 520,
 ) -> np.ndarray:
     """The plan view with the person's floor position and anything in the way."""
     canvas, transform = room_outline(width, height - 48, frame, zones)
-    canvas = np.vstack(
-        [np.full((48, width, 3), SURFACE, dtype=np.uint8), canvas]
-    )
-    _text(canvas, (22, 32), title, INK, 20)
+    canvas = np.vstack([np.full((48, width, 3), SURFACE, dtype=np.uint8), canvas])
+    _text(canvas, (22, 32), title[:60], INK, 20)
+    if subtitle:
+        band = np.full((28, width, 3), SURFACE, dtype=np.uint8)
+        _text(band, (22, 19), subtitle[:100], INK_DIM, 13, True)
+        canvas = np.vstack([canvas, band])
 
     def to_canvas(point) -> tuple[int, int]:
         p = np.asarray(point, dtype=np.float64).reshape(2)
         x = p[0] * transform[0, 0] + transform[0, 2]
         y = p[1] * transform[1, 1] + transform[1, 2]
-        return int(round(x)), int(round(y)) + 48
+        return round(x), round(y) + 48
 
     if corridor:
         pts = np.array([to_canvas(p) for p in corridor], dtype=np.int32)

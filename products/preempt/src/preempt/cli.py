@@ -1,11 +1,11 @@
 """Command line: run a sample, analyse a video, evaluate, benchmark, make samples.
 
-    python -m preempt.cli sample bed-exit-steady
-    python -m preempt.cli video ward.mp4 --room rooms/default.json
-    python -m preempt.cli evaluate --seeds 5 --out eval/synthetic.json
-    python -m preempt.cli urfall eval/data --room eval/urfall-room.json
-    python -m preempt.cli bench
-    python -m preempt.cli samples --out samples
+python -m preempt.cli sample bed-exit-steady
+python -m preempt.cli video ward.mp4 --room rooms/default.json
+python -m preempt.cli evaluate --seeds 5 --out eval/synthetic.json
+python -m preempt.cli urfall eval/data --room eval/urfall-room.json
+python -m preempt.cli bench
+python -m preempt.cli samples --out samples
 """
 
 from __future__ import annotations
@@ -26,6 +26,13 @@ def _print_record(record, analysis) -> None:
     print(f"  lead time         {metrics['lead_time_s']} s")
     print(f"  calls             {[c['rung'] for c in analysis.calls]}")
     print(f"  view usable       {metrics['view']['usable_fraction'] * 100:.0f}% of frames")
+    setup = record.input.get("room_setup") or {}
+    if setup:
+        c = setup["calibration"]
+        print(
+            f"  room              {setup['name']} ({setup['source']}); camera height "
+            f"{c['camera_height']}, focal length {c['focal_length']}"
+        )
     privacy = metrics["privacy"]
     print(
         f"  privacy           {privacy['camera_bytes_persisted']} camera bytes written, "
@@ -60,7 +67,9 @@ def cmd_video(args: argparse.Namespace) -> int:
     room = RoomConfig.load(args.room) if args.room else _default_room()
     sink = Path(args.evidence) if args.evidence else None
     started = time.perf_counter()
-    record, analysis = analyse_video(args.path, room, sink=sink)
+    record, analysis = analyse_video(
+        args.path, room, sink=sink, room_source="command line" if args.room else "default"
+    )
     print(f"preempt: {args.path}")
     _print_record(record, analysis)
     print(f"  wall clock        {time.perf_counter() - started:.1f} s")
@@ -101,7 +110,7 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
     import cv2
 
     from .calibrate import calibrate_from_people
-    from .config import RoomConfig
+    from .config import Calibration, RoomConfig
     from .pose import PoseEstimator
 
     paths = sorted(Path(args.frames).glob("*.png")) + sorted(Path(args.frames).glob("*.jpg"))
@@ -122,9 +131,7 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
     if size is None:
         print("no frames decoded")
         return 1
-    result = calibrate_from_people(
-        poses, size, stature_m=args.stature, focal_px=args.focal
-    )
+    result = calibrate_from_people(poses, size, stature_m=args.stature, focal_px=args.focal)
     print(json.dumps(result.to_dict(), indent=2))
     if not result.ok:
         return 1
@@ -134,6 +141,11 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
         notes=(
             "Calibrated from people walking in the room rather than from measured "
             "floor points. " + "; ".join(result.assumptions)
+        ),
+        calibration=Calibration(
+            camera_height="assumed",
+            focal_length="measured" if args.focal else "assumed",
+            note=f"recovered from walking people, taking their stature as {args.stature} m",
         ),
     )
     room.save(args.out)

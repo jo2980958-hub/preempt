@@ -131,7 +131,24 @@
         <div class="upload">
           <label for="file">Or watch your own video</label>
           <input type="file" id="file" data-demo="file-input" accept="video/*,.json">
-          <p class="upload-note" id="upload-note">The frames are read, the pose is taken, and each frame is destroyed before the next one is decoded.</p>
+          <label for="room-file">Its room setup <span class="faint">(optional)</span></label>
+          <input type="file" id="room-file" data-demo="room-input" accept=".json,application/json">
+          <p class="upload-note" id="upload-note">A video is measured against a room setup: four floor points, a vertical reference, and the bed and chair zones. Without one, Preempt uses the synthetic ward's room, which will not match your camera. The frames are read, the pose is taken, and each frame is destroyed before the next one is decoded.</p>
+        </div>
+        <div class="preview" id="preview" data-demo="room-preview" hidden>
+          <div class="preview-head">
+            <h3>Check the room before anything runs</h3>
+            <span class="chip" id="preview-cal">—</span>
+          </div>
+          <div class="preview-body">
+            <div class="preview-frame"><canvas id="preview-canvas" width="640" height="360" aria-label="The first frame of the video with the room setup drawn over it"></canvas></div>
+            <div class="preview-side">
+              <dl class="setup-dl" id="preview-facts"></dl>
+              <p class="preview-warn" id="preview-warn" hidden></p>
+              <button class="primary" id="preview-go" data-demo="preview-go" type="button">Watch this video</button>
+            </div>
+          </div>
+          <p class="preview-note">The first frame is drawn here by your browser from the file on your computer. Nothing is uploaded until you press Watch, and the service destroys every frame as soon as the pose is read. If the zones do not sit on the bed, the chair and the floor, the room is wrong for this camera and every height will be wrong with it.</p>
         </div>
       </section>
 

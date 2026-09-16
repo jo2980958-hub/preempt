@@ -105,3 +105,44 @@ export function hazardsPanel(h) {
     </div>
   </section>`;
 }
+
+const SOURCE_WORDS = {
+  measured: 'measured', assumed: 'assumed', synthetic: 'exact (synthetic camera)', unstated: 'not stated',
+};
+const ORIGIN_WORDS = {
+  uploaded: 'a room setup sent with this video',
+  default: 'the default room, from the synthetic ward',
+  'pose track': "the pose track's own room",
+  'command line': 'a room setup given on the command line',
+};
+
+/** Which room the numbers were measured against, and whether its camera was measured. */
+export function setupPanel(record) {
+  const setup = record.input?.room_setup;
+  if (!setup) return '';
+  const cal = setup.calibration || {};
+  const synthetic = cal.camera_height === 'synthetic';
+  const tone = cal.calibrated ? 'ok' : 'warn';
+  const chip = synthetic ? 'Synthetic camera, exact' : cal.calibrated ? 'Camera measured' : 'Camera assumed, not measured';
+  const caveats = [];
+  if (!cal.calibrated) {
+    caveats.push(`The camera height and focal length for this room were ${cal.camera_height === 'unstated' ? 'never stated, so Preempt treats them as assumed' : 'assumed rather than measured'}. Every height and distance on this page rests on them: read the metres as approximate.`);
+  }
+  if (setup.source === 'default' && record.params?.input_kind === 'video') {
+    caveats.push('This video was measured against the synthetic ward\'s room. Unless it was filmed in that room, the zones and heights do not describe it.');
+  }
+  return `<section class="panel setup" id="sec-setup" data-demo="room-setup" aria-labelledby="setup-h">
+    <div class="ph"><h2 id="setup-h">Measured against ${esc(setup.name)}</h2>
+      <span class="chip ${tone}">${esc(chip)}</span>
+      <span class="sub">${esc(ORIGIN_WORDS[setup.source] || setup.source)}</span></div>
+    <div class="pb">
+      <dl class="setup-dl">
+        <div><dt>Camera height</dt><dd>${esc(SOURCE_WORDS[cal.camera_height] || cal.camera_height)}</dd></div>
+        <div><dt>Focal length</dt><dd>${esc(SOURCE_WORDS[cal.focal_length] || cal.focal_length)}</dd></div>
+        <div><dt>Zones</dt><dd>${(setup.zones || []).map(esc).join(', ') || 'none'}</dd></div>
+      </dl>
+      ${cal.note ? `<p class="setup-note">${esc(cal.note)}</p>` : ''}
+      ${caveats.map((c) => `<p class="setup-caveat">${esc(c)}</p>`).join('')}
+    </div>
+  </section>`;
+}

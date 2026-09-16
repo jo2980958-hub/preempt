@@ -57,10 +57,20 @@ KEYPOINT_NAMES: tuple[str, ...] = (
 K = {name: i for i, name in enumerate(KEYPOINT_NAMES)}
 
 SKELETON: tuple[tuple[int, int], ...] = (
-    (5, 6), (5, 7), (7, 9), (6, 8), (8, 10),
-    (5, 11), (6, 12), (11, 12),
-    (11, 13), (13, 15), (12, 14), (14, 16),
-    (0, 5), (0, 6),
+    (5, 6),
+    (5, 7),
+    (7, 9),
+    (6, 8),
+    (8, 10),
+    (5, 11),
+    (6, 12),
+    (11, 12),
+    (11, 13),
+    (13, 15),
+    (12, 14),
+    (14, 16),
+    (0, 5),
+    (0, 6),
 )
 
 RTMPOSE_T = ModelSpec(
@@ -145,17 +155,11 @@ class PoseStats:
         return {
             "frames_seen": self.frames_seen,
             "frames_with_person": self.frames_with_person,
-            "detector_ms_per_frame": round(
-                self.detector_ms / max(1, self.frames_seen), 2
-            ),
-            "pose_ms_per_frame": round(
-                self.pose_ms / max(1, self.frames_with_person), 2
-            ),
+            "detector_ms_per_frame": round(self.detector_ms / max(1, self.frames_seen), 2),
+            "pose_ms_per_frame": round(self.pose_ms / max(1, self.frames_with_person), 2),
             "image_bytes_read": self.image_bytes_read,
             "keypoint_bytes_kept": self.keypoint_bytes_kept,
-            "compression_ratio": round(
-                self.image_bytes_read / max(1, self.keypoint_bytes_kept), 1
-            ),
+            "compression_ratio": round(self.image_bytes_read / max(1, self.keypoint_bytes_kept), 1),
         }
 
 
@@ -262,10 +266,9 @@ class PoseEstimator:
         rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB).astype(np.float32)
         normalised = (rgb - RTMPOSE_MEAN) / RTMPOSE_STD
         blob = np.ascontiguousarray(normalised.transpose(2, 0, 1)[None, ...])
-        with stage("pose:rtmpose") as timer:
-            with self.pose._lock:  # noqa: SLF001 - DnnRunner's documented serialisation
-                self.pose.net.setInput(blob)
-                outputs = self.pose.net.forward(self._out_names)
+        with stage("pose:rtmpose") as timer, self.pose._lock:
+            self.pose.net.setInput(blob)
+            outputs = self.pose.net.forward(self._out_names)
         self.stats.pose_ms += timer.ms
         by_name = dict(zip(self._out_names, outputs, strict=True))
         coords, scores = decode_simcc(by_name["simcc_x"], by_name["simcc_y"])
@@ -322,7 +325,12 @@ class PoseEstimator:
         self.stats.frames_with_person += 1
         self.stats.keypoint_bytes_kept += int(xy.nbytes + scores.nbytes)
         return PoseFrame(
-            index=index, time_s=time_s, xy=xy, scores=scores, box=box, box_score=score,
+            index=index,
+            time_s=time_s,
+            xy=xy,
+            scores=scores,
+            box=box,
+            box_score=score,
         )
 
     def info(self) -> dict[str, Any]:

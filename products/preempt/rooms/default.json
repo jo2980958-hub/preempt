@@ -203,5 +203,10 @@
   },
   "privacy_mode": "strict",
   "fps_hint": 0.0,
-  "notes": "Default room shipped with the image. A real ward replaces this with its own four floor points, its own zones and its own vertical reference; see docs/report.md."
+  "notes": "Default room shipped with the image. A real ward replaces this with its own four floor points, its own zones and its own vertical reference; see docs/report.md.",
+  "calibration": {
+    "camera_height": "synthetic",
+    "focal_length": "synthetic",
+    "note": "The synthetic ward's own camera, which generated the bundled samples, so its height and focal length are exact. It is not the camera in any real room."
+  }
 }

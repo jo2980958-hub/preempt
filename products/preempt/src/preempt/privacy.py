@@ -29,6 +29,7 @@ deployed service: `Pipeline` raises if the request asks for it and
 
 from __future__ import annotations
 
+import contextlib
 import enum
 import os
 from dataclasses import dataclass, field
@@ -134,10 +135,9 @@ class PrivacyGuard:
         bytes in that page are not a picture of a patient.
         """
         if self.mode == "strict":
-            try:
+            # A read-only view raises; there is nothing to overwrite then.
+            with contextlib.suppress(ValueError, TypeError):
                 image[...] = 0
-            except (ValueError, TypeError):  # a read-only view; nothing to do
-                pass
         else:
             self.ledger.frames_retained += 1
 

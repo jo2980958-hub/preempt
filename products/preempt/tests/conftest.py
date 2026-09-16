@@ -16,9 +16,7 @@ os.environ.setdefault("PREEMPT_SAMPLES_DIR", str(ROOT / "samples"))
 
 
 def models_present() -> bool:
-    return (MODELS / "yolox_tiny.onnx").is_file() and (
-        MODELS / "rtmpose-t-body7.onnx"
-    ).is_file()
+    return (MODELS / "yolox_tiny.onnx").is_file() and (MODELS / "rtmpose-t-body7.onnx").is_file()
 
 
 needs_models = pytest.mark.skipif(

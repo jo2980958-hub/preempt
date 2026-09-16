@@ -312,9 +312,7 @@ def distance_to_zone_m(frame: FloorFrame, zone: Zone, floor_point: np.ndarray) -
     return float(-d)  # positive when outside, which is the way a nurse would say it
 
 
-def corridor_polygon(
-    start: np.ndarray, end: np.ndarray, width_m: float
-) -> np.ndarray | None:
+def corridor_polygon(start: np.ndarray, end: np.ndarray, width_m: float) -> np.ndarray | None:
     """The walking route between two floor points, as a rectangle in floor metres."""
     start = np.asarray(start, dtype=np.float64)
     end = np.asarray(end, dtype=np.float64)

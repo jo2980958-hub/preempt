@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from preempt.config import FloorPlane, Zone
 from preempt.geometry import (
     FloorFrame,
@@ -100,7 +99,7 @@ def test_a_point_above_the_horizon_is_refused_not_guessed(frame_and_camera):
 
 
 def test_without_a_vertical_reference_the_height_is_refused_with_a_reason():
-    room, camera = default_room()
+    room, _camera = default_room()
     plane = FloorPlane(
         image_points=room.floor.image_points,
         world_points=room.floor.world_points,

@@ -55,7 +55,15 @@ ON_FLOOR = "on the floor"
 AWAY = "away"
 
 ORDER = (
-    SETTLED, STIRRING, SITTING_UP, ON_EDGE, PREPARING, RISING, STANDING, WALKING, ON_FLOOR,
+    SETTLED,
+    STIRRING,
+    SITTING_UP,
+    ON_EDGE,
+    PREPARING,
+    RISING,
+    STANDING,
+    WALKING,
+    ON_FLOOR,
 )
 
 KNEE_SEATED_MAX = 130.0
@@ -64,6 +72,14 @@ BODY_AXIS_LYING_MIN = 62.0
 BODY_AXIS_UPRIGHT_MAX = 16.0
 TRUNK_LYING_MIN = 60.0
 STIR_SPEED_MPS = 0.05
+DESCENT_WINDOW_S = 0.5
+"""Hip-height slope window for telling a sit-down from a rise: long enough that
+seated keypoint noise averages out, short enough to follow a one-second sit."""
+KNEE_CLOSING_DEG_S = 90.0
+"""Without metric heights, a sit-down is the knees closing at least this fast. On
+the CDC footage they close at 150 to 220 degrees a second."""
+SAT_DOWN_REPORT_S = 1.5
+"""How long after the descent the reading keeps saying the person just sat down."""
 
 
 @dataclass
@@ -128,6 +144,8 @@ class ExitDetector:
         self._transfer_delta: float = 0.0
         self._floor_since: float | None = None
         self._floor_lapsed: float | None = None
+        self._descent_at: float | None = None
+        self._descent_speed: float = 0.0
         self.timeline: list[ExitReading] = []
 
     # -- geometry helpers ---------------------------------------------------
@@ -164,8 +182,13 @@ class ExitDetector:
         sign does the work that a separate "is this a lie-down" check would
         otherwise have to.
         """
+        # Lean gathered while the person was coming down onto the seat is evidence
+        # of sitting down, not of getting up; see `_note_descent`.
+        since = self._descent_at if self._descent_at is not None else -np.inf
         samples = [
-            (s.time_s, s.lean_offset) for s in self.history if s.lean_offset is not None
+            (s.time_s, s.lean_offset)
+            for s in self.history
+            if s.lean_offset is not None and s.time_s > since
         ]
         if len(samples) < 4:
             return None
@@ -228,9 +251,7 @@ class ExitDetector:
         if np.isnan(state.floor_xy).any():
             return False
         point = tuple(state.foot_contact)
-        return not any(
-            inside(zone, point) for zone in self.bed_zones + self.chair_zones
-        )
+        return not any(inside(zone, point) for zone in self.bed_zones + self.chair_zones)
 
     def _posture(self, state: BodyState) -> str:
         """Supported, lying, seated or upright, in that order of reliability.
@@ -285,6 +306,12 @@ class ExitDetector:
             # sitting. Leaving it accumulated across a walk meant one noisy frame
             # that read as seated could satisfy a hold that had started minutes
             # earlier, which is how the last false alarm in the evaluation got in.
+            self._prepare_since = None
+            self._lapsed_since = None
+        descending = self._note_descent(state)
+        if descending:
+            # The same lean, travelling the other way. Whatever evidence for a rise
+            # had built up belongs to the sit-down and is thrown away with it.
             self._prepare_since = None
             self._lapsed_since = None
         distance = state.lean_offset
@@ -354,7 +381,9 @@ class ExitDetector:
                 reasons.append(
                     "the shoulders have arrived over the feet"
                     if distance >= -0.05
-                    else f"the shoulders are {abs(distance):.2f} back from over the feet and closing"
+                    else (
+                        f"the shoulders are {abs(distance):.2f} back from over the feet and closing"
+                    )
                 )
             if state.knee_deg is not None:
                 reasons.append(
@@ -363,6 +392,12 @@ class ExitDetector:
                 )
             return self._settle(PREPARING, state, support, distance, closing, reasons)
 
+        if self._descent_at is not None and state.time_s - self._descent_at <= SAT_DOWN_REPORT_S:
+            reasons.append(
+                f"sitting down: the hips came down from standing at {self._descent_speed:.2f} m/s"
+                if self._descent_speed > 0
+                else "sitting down: the knees closed from standing"
+            )
         on_edge = self._on_edge(state)
         if on_edge:
             reasons.append("sitting on the edge with the feet on the floor")
@@ -374,6 +409,54 @@ class ExitDetector:
         return self._settle(SITTING_UP, state, support, distance, closing, reasons)
 
     # -- transition helpers -------------------------------------------------
+    def _note_descent(self, state: BodyState) -> bool:
+        """Is this person on their way *down* onto the seat? Remember when, if so.
+
+        Sitting down and getting up share a shape. To lower yourself onto a chair
+        you lean forward over your feet with your knees bent, and from one camera
+        that is the lean `_preparing` calls on. Real footage (the CDC chair-stand
+        clips, `docs/evaluation.md`) produced a call on every sit-down because of
+        it. Thresholds cannot separate the two, because the postures really are
+        the same; the direction of travel can.
+
+        A sit-down is the hips going down fast -- as fast as a rise goes up, which
+        is `rise_hip_speed_mps` -- or, without metric heights, the knees closing,
+        within the detector's history of the person having been upright. A rise
+        starts with the hips seated and still, or going up. The fit is over half a
+        second rather than a frame difference so that keypoint noise on a seated
+        hip cannot pass for a descent.
+
+        While it holds, `_descent_at` moves forward, and `_transfer_rate` only
+        uses lean samples from after it, so the evidence for standing up has to
+        be gathered from scratch once the person has actually sat.
+        """
+        upright_recently = False
+        for reading in reversed(self.timeline):
+            if state.time_s - reading.time_s > self.history_s:
+                break
+            if reading.state in (STANDING, WALKING):
+                upright_recently = True
+                break
+        if not upright_recently:
+            return False
+        window = [s for s in self.history if state.time_s - s.time_s <= DESCENT_WINDOW_S]
+        hips = [(s.time_s, s.hip_height) for s in window if s.hip_height is not None]
+        if len(hips) >= 3 and hips[-1][0] - hips[0][0] >= DESCENT_WINDOW_S / 2:
+            slope = float(np.polyfit([t for t, _ in hips], [h for _, h in hips], 1)[0])
+            descending = slope <= -self.t.rise_hip_speed_mps
+            speed = -slope
+        else:
+            knees = [(s.time_s, s.knee_deg) for s in window if s.knee_deg is not None]
+            if len(knees) < 3 or knees[-1][0] - knees[0][0] < DESCENT_WINDOW_S / 2:
+                return False
+            slope = float(np.polyfit([t for t, _ in knees], [k for _, k in knees], 1)[0])
+            descending = slope <= -KNEE_CLOSING_DEG_S
+            speed = 0.0
+        if descending:
+            self._descent_at = state.time_s
+            self._descent_speed = speed
+        return descending
+
     def _hip_rise_speed(self) -> float | None:
         """Upward hip speed in m/s, when a metric height is available."""
         heights = [(s.time_s, s.hip_height) for s in self.history if s.hip_height is not None]
@@ -395,9 +478,7 @@ class ExitDetector:
         # The feet have to be on the floor beside the furniture. Sitting up in
         # bed drives the same lean measure the same way, and without this gate the
         # product calls every time somebody props themselves up on an elbow.
-        leaning_out = (
-            state.lean_offset is not None and state.lean_offset >= self.t.lean_over_feet
-        )
+        leaning_out = state.lean_offset is not None and state.lean_offset >= self.t.lean_over_feet
         # A rate alone is not enough. Somebody shifting in a chair produces the
         # same rate for a moment and then goes back; somebody standing up keeps
         # going. So the total travel across the window has to be real as well.
