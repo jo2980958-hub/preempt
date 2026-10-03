@@ -2,16 +2,12 @@
 
 **A call before the fall, from an abstracted pose and nothing else.**
 
-Preempt watches a hospital or care-home room and raises a call *before* someone
-falls, not after. It recognises the movement that precedes standing up from a bed
-or a chair and calls while the person is still supported. It scores how steady
-they are once they are on their feet. It checks what is in the way. And it says
-plainly when it cannot see.
-
-It is privacy-first by construction: the camera frame is destroyed as soon as the
-pose has been read, so the evidence a nurse sees is a stick figure on a room plan
-and never a photograph. That is a testable claim, not a slogan, and
-`tests/test_privacy.py` tests it.
+Preempt watches a hospital or care-home room through one camera and raises a call
+*before* someone falls. It recognises the movement that precedes standing up and
+calls while the person is still supported, scores how steady they are once they are
+on their feet, checks what is in the way, and says plainly when it cannot see. The
+camera frame is destroyed as soon as the pose has been read, so the evidence a nurse
+sees is a stick figure on a room plan and never a photograph.
 
 **Live: <https://2uhvgzwrwc.us-east-2.awsapprunner.com>**
 
@@ -19,15 +15,21 @@ and never a photograph. That is a testable claim, not a slogan, and
 |---|---|
 | Median lead time before the person is upright, 10 bed exits | **4.60 s** (4.07 to 5.60) |
 | Median lead time, all 15 bed and chair exits | **4.47 s** (0.73 to 5.60) |
-| Detection rate, synthetic decision layer | **100 %** (25 of 25) |
+| Exits called, synthetic decision layer | **25 of 25** |
 | False alarms in 1.23 hours of observed quiet | **0** |
-| Real CDC chair-stand footage, hand-set room | **3 of 3** stands called, 0 false calls (was 3) |
+| Real CDC chair-stand footage, hand-set room | **3 of 3** stands called, 0 false calls (3 before the sit-down fix) |
 | Fall sequences reaching "on the floor", UR Fall | **10 of 12**, median 0.50 s behind ground truth |
 | Camera bytes written to disk | **0** |
 | Tests | **124**, green |
 
-Numbers, method and the failures in [docs/evaluation.md](docs/evaluation.md),
-including the two flaws that real footage found and what fixing them changed.
+Lead time is measured on synthetic sequences because no real dataset labels the frame
+at which a person began to stand. On the real chair-stand footage, which asks for the
+fastest stands a person can do, the three calls came 0.08, 0.42 and 0.41 s before
+upright. Method, every figure and every failure: [docs/evaluation.md](docs/evaluation.md).
+
+The privacy claim is testable rather than asserted, and `tests/test_privacy.py` tests
+it: zero camera bytes persisted, zero frames retained, and no code path from a camera
+frame to a saved file.
 
 ---
 
@@ -80,10 +82,9 @@ curl -F file=@ward.mp4 -F 'params={"room": {...}}' .../api/jobs
 ```
 
 The room is checked by the same parser as `--room`, and a bad one is a 400 that
-names the field. Without one the synthetic ward's room is used, and the result
-says so. `POST /api/rooms/check` validates a room on its own. In the browser, a
-video stops at a preview that draws the room over its first frame before
-anything is sent.
+names the field. Without one the default room is used, and the result says so.
+`POST /api/rooms/check` validates a room on its own. In the browser, a video stops
+at a preview that draws the room over its first frame before anything is sent.
 
 Other commands: `evaluate`, `urfall`, `calibrate`, `bench`, `samples`.
 `python -m preempt.cli --help`.
@@ -108,8 +109,10 @@ infra/ecr.sh preempt --context . --dockerfile products/preempt/Dockerfile
 AWS_REGION=us-east-2 infra/apprunner.sh preempt --cpu 2 --memory 4
 ```
 
-Resources, rates and the two decisions worth recording in
-[docs/costs.md](docs/costs.md).
+App Runner, 2 vCPU and 4 GB, always on. **us-east-2, not us-east-1**, because the
+account allows two App Runner services per region and both us-east-1 slots were
+taken by sibling entries. Both ONNX models, the bundled pose tracks and the default
+room are inside the image, so the service needs no network at runtime.
 
 ---
 
@@ -152,4 +155,3 @@ from it is committed here or appears in any document, deck or video.
   consent and dignity questions a ward would ask
 - [docs/architecture.md](docs/architecture.md) — pipeline, geometry and AWS diagrams
 - [docs/evaluation.md](docs/evaluation.md) — the numbers and the failures
-- [docs/costs.md](docs/costs.md) — what was created on AWS and what it costs

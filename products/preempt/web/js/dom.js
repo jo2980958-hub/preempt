@@ -5,7 +5,6 @@ export const $ = (sel) => document.querySelector(sel);
 export const ui = {
   status: $('#status'),
   results: $('#results'),
-  empty: $('#empty'),
   picker: $('#picker'),
   samples: $('#samples'),
   progress: $('#progress'),
@@ -28,5 +27,4 @@ export const ui = {
   crumb: $('#crumb'),
   crumbDot: $('#crumb-dot'),
   source: $('#tb-source'),
-  privacy: $('#tb-privacy'),
 };

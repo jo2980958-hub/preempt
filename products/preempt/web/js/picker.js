@@ -44,7 +44,6 @@ export function setSamples(list) {
   // the order the service gave it.
   const rank = (s) => (s.name === FIRST ? 0 : s.name === FAILURE_CASE ? 2 : 1);
   const ordered = [...samples].sort((a, b) => rank(a) - rank(b));
-  document.querySelector('#picker-h').textContent = `${samples.length} recorded rooms`;
   ui.samples.innerHTML = ordered.map(card).join('');
   ui.samples.querySelectorAll('.sample').forEach((b) =>
     b.addEventListener('click', () => choose(b.dataset.name)));

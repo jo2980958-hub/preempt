@@ -1,26 +1,7 @@
-/* The chrome around the results: appearance, the status word, the progress
-   card, and which section of the run the reader has reached. */
+/* The chrome around the results: the status word, the progress card, and which
+   section of the run the reader has reached. */
 
-import { $, ui } from './dom.js';
-
-/* ── appearance. A ward dims its screens at night. ─────────────────── */
-function setTheme(mode) {
-  document.documentElement.dataset.theme = mode;
-  try { localStorage.setItem('preempt-theme', mode); } catch { /* private mode */ }
-  const dark = mode === 'dark';
-  $('#theme-label').textContent = dark ? 'Bring the lights up' : 'Dim the screen';
-  $('#theme').setAttribute('aria-pressed', String(dark));
-}
-
-export function initTheme() {
-  let saved = null;
-  try { saved = localStorage.getItem('preempt-theme'); } catch { /* ignore */ }
-  const dark = saved ? saved === 'dark'
-    : window.matchMedia('(prefers-color-scheme: dark)').matches;
-  setTheme(dark ? 'dark' : 'light');
-  $('#theme').addEventListener('click', () =>
-    setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
-}
+import { ui } from './dom.js';
 
 /* ── the one element that says whether a job is running or finished ── */
 export function status(text, tone = '') {
@@ -47,11 +28,6 @@ export function endProgress() {
   ui.fill.style.width = '100%';
   ui.pct.textContent = '100%';
   setTimeout(() => { ui.progress.hidden = true; }, 500);
-}
-
-export function showEnvironment(version) {
-  $('#f-opencv').textContent = version.opencv_version || '—';
-  $('#f-engine').textContent = Object.values(version.models || {})[0]?.name || 'RTMPose-t';
 }
 
 /* ── which section the reader has reached ──────────────────────────── */

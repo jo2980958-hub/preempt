@@ -34,13 +34,12 @@ export function roomPanel(record) {
   return `<section class="panel" id="sec-room" aria-labelledby="room-h">
     <div class="ph"><h2 id="room-h">The room, as the device holds it</h2>
       <span class="chip ${state.tone}">${esc(state.word)}</span>
-      <span class="sub">${samples.length} samples over ${secs(record.metrics.duration_s, 1)}</span></div>
+      <span class="sub">${secs(record.metrics.duration_s, 1)} of movement</span></div>
     <div class="field">
       <div class="field-canvas">${drawFigure(frame)}${thin}</div>
       <p class="field-note"><b>No image is produced at any point.</b>
-        ${kept} of ${total} coordinates cleared the threshold at ${secs(frame?.time_s)}, five of them
-        the head — and a head that is five numbers is not a face. Scrub the ribbon and the figure does
-        not move: coordinates were kept for that one instant and thrown away for every other.</p>
+        ${kept} of ${total} coordinates cleared the threshold at ${secs(frame?.time_s)}. Five of them
+        are the head, and a head that is five numbers is not a face.</p>
     </div>
     <div class="tl">
       <div class="tl-controls">

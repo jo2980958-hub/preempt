@@ -18,8 +18,8 @@ export function riskPanel(record, risk) {
       <h2 id="risk-h">${esc(record.metrics.peak_headline || state.word)}</h2>
       <div class="risk-meta">
         <span class="chip ${state.tone}">${esc(state.word)}</span>
-        <span class="chip plain">state named at ${stamp(risk?.at_s ?? 0)}</span>
-        ${has(lead) ? `<span class="chip accent">${lead.toFixed(2)} s of warning before upright</span>`
+        <span class="chip plain">named at ${stamp(risk?.at_s ?? 0)}</span>
+        ${has(lead) ? `<span class="chip accent">${lead.toFixed(2)} s before upright</span>`
     : '<span class="chip plain">nobody stood up, so there is no lead time</span>'}
       </div>
       <ul class="reasons">
@@ -33,33 +33,37 @@ export function riskPanel(record, risk) {
 
 export function callsPanel(calls) {
   const order = ['nudge', 'station', 'urgent'];
-  const raised = new Set(calls.map((c) => c.rung));
-  const rungs = order.map((key) => {
+  const was = (key) => calls.filter((c) => c.rung === key);
+
+  const raised = order.filter((key) => was(key).length).map((key) => {
     const r = rungOf(key);
-    const mine = calls.filter((c) => c.rung === key);
-    const on = mine.length > 0;
-    return `<div class="rung ${on ? 'raised' : 'quiet'} ${key}">
-      <span class="badge" aria-hidden="true">${on ? r.n : '·'}</span>
+    const mine = was(key);
+    return `<div class="rung raised ${key}">
+      <span class="badge" aria-hidden="true">${r.n}</span>
       <div>
         <p class="rt">${esc(r.name)}
-          ${on ? `<span class="chip ${key === 'urgent' ? 'hot' : 'accent'}">raised ${mine.length}&times;, first at ${stamp(mine[0].time_s)}</span>`
-    : '<span class="chip plain">not raised</span>'}</p>
+          <span class="chip ${key === 'urgent' ? 'hot' : 'accent'}">raised ${mine.length}&times;, first at ${stamp(mine[0].time_s)}</span></p>
         <p class="rd">${esc(r.what)}</p>
       </div>
     </div>`;
   }).join('');
 
-  const maint = calls.filter((c) => c.rung === 'maintenance');
+  const maint = was('maintenance');
   const maintRung = maint.length ? `<div class="rung raised maintenance">
       <span class="badge" aria-hidden="true">!</span>
       <div><p class="rt">${esc(rungOf('maintenance').name)}
         <span class="chip refuse">raised at ${stamp(maint[0].time_s)}</span></p>
       <p class="rd">${esc(rungOf('maintenance').what)}</p></div></div>` : '';
 
+  // The rungs that stayed quiet are one line, not three empty cards.
+  const silent = order.filter((key) => !was(key).length)
+    .map((key) => rungOf(key).name.replace(/^./, (c) => c.toLowerCase()));
+  const quiet = silent.length
+    ? `<p class="quiet-rungs">Not raised: <b>${silent.map(esc).join('</b>, <b>')}</b></p>` : '';
+
   return `<section class="panel" id="sec-calls" aria-labelledby="calls-h">
-    <div class="ph"><h2 id="calls-h">Who was called, and why</h2>
-      <span class="sub">${calls.length} ${calls.length === 1 ? 'call' : 'calls'}${raised.size ? '' : ' — the ladder stayed quiet'}</span></div>
-    <div class="ladder">${rungs}${maintRung}</div>
+    <div class="ph"><h2 id="calls-h">Who was called, and why</h2></div>
+    <div class="ladder">${raised}${maintRung}${quiet}</div>
     ${callLog(calls)}
   </section>`;
 }
@@ -87,49 +91,50 @@ export function hazardsPanel(h) {
   const found = (h.hazards || []).map((x) => `<li>
       <span class="m chip warn">${metres(x.metres)}</span>
       <span><b>${esc(x.kind)}</b><br>${esc(x.description)}.
-        <span class="faint small">Confidence ${(x.confidence ?? 0).toFixed(2)}${has(x.area_cm2) ? `, area ${x.area_cm2} cm²` : ''}, on the floor plan at ${x.floor_xy?.map((n) => n.toFixed(1)).join(' m, ')} m.</span></span></li>`).join('');
+        <span class="faint small">On the floor plan at ${x.floor_xy?.map((n) => n.toFixed(1)).join(' m, ')} m.</span></span></li>`).join('');
+  const checked = (h.checked || []).map((c) =>
+    `<li><span class="tick">✓</span><span>${esc(c)}</span></li>`).join('');
+  const skipped = (h.skipped || []).map((s) =>
+    `<li><span class="cross">✕</span><span class="dim">${esc(s)}</span></li>`).join('');
+  if (!found && !checked && !skipped) return '';
 
   return `<section class="panel" id="sec-hazards" aria-labelledby="haz-h">
-    <div class="ph"><h2 id="haz-h">What was on the route</h2>
-      <span class="sub">${(h.hazards || []).length} found, ${(h.checked || []).length} checked, ${(h.skipped || []).length} skipped</span></div>
+    <div class="ph"><h2 id="haz-h">What was on the route</h2></div>
     <div class="pb">
-      <p class="haz-title">Found</p>
-      <ul class="haz">${found || '<li><span class="tick">✓</span><span class="dim">Nothing on the walking route.</span></li>'}</ul>
-      <p class="haz-title">Checked</p>
-      <ul class="haz">${(h.checked || []).map((c) =>
-    `<li><span class="tick">✓</span><span>${esc(c)}</span></li>`).join('')}</ul>
-      <p class="haz-title">Skipped, and why</p>
-      <ul class="haz">${(h.skipped || []).map((s) =>
-      `<li><span class="cross">✕</span><span class="dim">${esc(s)}</span></li>`).join('')
-    || '<li><span class="dim">Nothing was skipped.</span></li>'}</ul>
+      ${found
+    ? `<p class="haz-title">Found</p><ul class="haz">${found}</ul>`
+    : '<ul class="haz"><li><span class="tick">✓</span><span>Nothing on the walking route.</span></li></ul>'}
+      ${checked ? `<p class="haz-title">Checked</p><ul class="haz">${checked}</ul>` : ''}
+      ${skipped ? `<p class="haz-title">Skipped, and why</p><ul class="haz">${skipped}</ul>` : ''}
     </div>
   </section>`;
 }
 
 const SOURCE_WORDS = {
-  measured: 'measured', assumed: 'assumed', synthetic: 'exact (synthetic camera)', unstated: 'not stated',
+  measured: 'measured', assumed: 'assumed', synthetic: 'exact', unstated: 'not stated',
 };
 const ORIGIN_WORDS = {
   uploaded: 'a room setup sent with this video',
-  default: 'the default room, from the synthetic ward',
+  default: 'the default room setup',
   'pose track': "the pose track's own room",
   'command line': 'a room setup given on the command line',
 };
 
-/** Which room the numbers were measured against, and whether its camera was measured. */
+/** Which room the numbers were measured against, and how far its camera can be trusted. */
 export function setupPanel(record) {
   const setup = record.input?.room_setup;
   if (!setup) return '';
   const cal = setup.calibration || {};
-  const synthetic = cal.camera_height === 'synthetic';
+  const exact = cal.camera_height === 'synthetic';
   const tone = cal.calibrated ? 'ok' : 'warn';
-  const chip = synthetic ? 'Synthetic camera, exact' : cal.calibrated ? 'Camera measured' : 'Camera assumed, not measured';
+  const chip = exact ? 'Camera exact'
+    : cal.calibrated ? 'Camera measured' : 'Camera assumed, not measured';
   const caveats = [];
   if (!cal.calibrated) {
-    caveats.push(`The camera height and focal length for this room were ${cal.camera_height === 'unstated' ? 'never stated, so Preempt treats them as assumed' : 'assumed rather than measured'}. Every height and distance on this page rests on them: read the metres as approximate.`);
+    caveats.push('The camera height and focal length for this room were assumed rather than measured. Every height and distance below rests on them, so read the metres as approximate.');
   }
   if (setup.source === 'default' && record.params?.input_kind === 'video') {
-    caveats.push('This video was measured against the synthetic ward\'s room. Unless it was filmed in that room, the zones and heights do not describe it.');
+    caveats.push('This video was measured against the default room setup. Unless it was filmed in that room, the zones and heights do not describe it.');
   }
   return `<section class="panel setup" id="sec-setup" data-demo="room-setup" aria-labelledby="setup-h">
     <div class="ph"><h2 id="setup-h">Measured against ${esc(setup.name)}</h2>

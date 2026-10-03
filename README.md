@@ -17,12 +17,19 @@ claim, not a slogan.
 
 | | |
 |---|---|
-| Median lead time before the person is upright | **4.60 s** |
-| Detection rate, synthetic decision layer | **100 %** (20 of 20) |
-| False alarms in 1.21 hours of observed quiet | **0** |
+| Median lead time before the person is upright, 10 bed exits | **4.60 s** (4.07 to 5.60) |
+| Median lead time, all 15 bed and chair exits | **4.47 s** (0.73 to 5.60) |
+| Exits called, synthetic decision layer | **25 of 25** |
+| False alarms in 1.23 hours of observed quiet | **0** |
+| Real CDC chair-stand footage, hand-set room | **3 of 3** stands called, 0 false calls |
 | Real fall sequences reaching "on the floor" | **10 of 12**, median 0.50 s behind ground truth |
 | Camera bytes written to disk | **0** |
-| Tests | **102** |
+| Tests | **124**, green |
+
+Lead time is measured on synthetic sequences because no real dataset labels the
+frame at which a person began to stand. On the real chair-stand footage, which
+asks for the fastest stands a person can do, the three calls came 0.08, 0.42 and
+0.41 s before upright.
 
 ## Start here
 
@@ -30,7 +37,6 @@ claim, not a slogan.
 - [products/preempt/docs/report.md](products/preempt/docs/report.md) — the technical report
 - [products/preempt/docs/architecture.md](products/preempt/docs/architecture.md) — the diagrams
 - [products/preempt/docs/evaluation.md](products/preempt/docs/evaluation.md) — the numbers and the failures
-- [products/preempt/docs/costs.md](products/preempt/docs/costs.md) — what runs on AWS and what it costs
 
 ## Layout
 

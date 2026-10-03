@@ -139,7 +139,7 @@ container's `/tmp` and expire with the job.
 Runner services per region and both us-east-1 slots were already taken by other
 work. Preempt is the only one of the five entries outside us-east-1, so a
 project-wide diagram would show four services in one region and this one in
-another. Recorded in `docs/costs.md`.
+another.
 
 ## 4. The request, end to end
 
@@ -166,7 +166,7 @@ sequenceDiagram
     B->>A: GET /api/jobs/{id}/evidence/risk-state.png
 ```
 
-A judge's own video takes the same path and runs YOLOX and RTMPose over it. It can
+An uploaded video takes the same path and runs YOLOX and RTMPose over it. It can
 bring its own room setup, as a second file part or as `room` in the job params.
 The service validates it before the job exists, so a bad room is a 400 naming the
 field, and records it in the result as `input.room_setup` with whether the

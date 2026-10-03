@@ -2,13 +2,14 @@
 
    The privacy claim is not a badge. It is the camera's entire output for one
    instant, printed as numbers, beside the figure those numbers produced, above
-   a line saying how many bytes left the device and how many frames were kept. */
+   a line saying how many bytes were written. */
 
 import { esc, has, bytes, secs, viewColour } from './format.js';
 import { evidenceUrl } from './api.js';
 
 export function ledgerPanel(frame, privacy) {
   const kps = frame?.keypoints || [];
+  if (!kps.length) return '';
   const seen = kps.filter((k) => k.seen).length;
   const rows = kps.map((k, i) => `<tr data-kp="${i}" class="${k.seen ? '' : 'low'}">
       <td class="name">${esc(k.name)}</td>
@@ -18,41 +19,18 @@ export function ledgerPanel(frame, privacy) {
     </tr>`).join('');
 
   return `<section class="panel" id="sec-privacy" aria-labelledby="led-h">
-    <div class="ph"><h2 id="led-h">Camera output, this instant</h2>
+    <div class="ph"><h2 id="led-h">What the camera gave, this instant</h2>
       <span class="sub mono">frame ${frame?.index ?? '—'} · ${secs(frame?.time_s)}</span></div>
     <table class="ledger">
       <thead><tr><th>Keypoint</th><th class="num">x</th><th class="num">y</th><th class="num">score</th></tr></thead>
       <tbody id="ledger-body">${rows}</tbody>
     </table>
     <div class="pledge">
-      <p class="l"><span>Keypoints above the threshold</span><b>${seen} of ${kps.length}</b></p>
-      <p class="l"><span>Camera bytes read from the sensor</span><b>${bytes(privacy.camera_bytes_read)}</b></p>
+      <p class="l"><span>Above the score threshold</span><b>${seen} of ${kps.length}</b></p>
       <p class="l"><span>Camera bytes written to disk</span><b class="is-ok">${bytes(privacy.camera_bytes_persisted)}</b></p>
-      <p class="l"><span>Frames examined</span><b>${privacy.frames_examined?.toLocaleString() ?? '—'}</b></p>
-      <p class="l"><span>Frames retained</span><b class="is-ok">${privacy.frames_retained ?? '—'}</b></p>
       <p class="l"><span>Keypoints kept, whole run</span><b>${bytes(privacy.keypoint_bytes_kept)}</b></p>
-      <p class="say">That list is all of it. No frame outlived the pose that was read from
-        it, so there is no photograph to leak, subpoena or lose.</p>
-    </div>
-  </section>`;
-}
-
-export function artefactsPanel(privacy) {
-  const rows = (privacy.artefacts || []).map((a) => `<tr>
-      <td><b>${esc(a.name)}</b><div class="faint">${esc(a.provenance)}, ${bytes(a.bytes)}</div></td>
-      <td class="hash">${esc(a.sha256)}</td>
-    </tr>`).join('');
-  return `<section class="panel" aria-labelledby="art-h">
-    <div class="ph"><h2 id="art-h">Everything this run wrote down</h2>
-      <span class="sub">${privacy.clean ? 'ledger balances' : 'ledger does not balance'}</span></div>
-    <table class="artefacts">
-      <thead><tr><th>Artefact</th><th>SHA-256</th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="2" class="dim">Nothing was written.</td></tr>'}</tbody>
-    </table>
-    <div class="pledge">
-      <p class="l"><span>Written from synthetic drawing</span><b>${bytes(privacy.synthetic_bytes_persisted)}</b></p>
-      <p class="l"><span>Written from camera pixels</span><b class="is-ok">${bytes(privacy.camera_bytes_persisted)}</b></p>
-      <p class="l"><span>Privacy mode</span><b>${esc(privacy.mode)}</b></p>
+      <p class="say">That table is all of it. No frame outlived the pose read from it, so there is
+        no photograph to leak, subpoena or lose.</p>
     </div>
   </section>`;
 }
@@ -75,16 +53,18 @@ export function viewPanel(record, lead = false) {
     `<span><i class="${k === 'usable' ? '' : 'hatched'}" style="background-color:${viewColour(k)}"></i>${esc(k)} — ${n} of ${total} frames</span>`).join('');
 
   const head = degraded
-    ? `<h4>Preempt is not watching, and will not guess</h4>
+    ? `<h4>Not watching, and not guessing</h4>
        <p class="dim">${sentence(refusal?.message || 'The view was not usable for part of this recording')}
-       For those frames there is no state, no steadiness score and no call about the patient —
-       a gap Preempt reports rather than fills in. Withholding is the price of being allowed in the room at all.</p>`
-    : `<h4>The view held for the whole recording</h4>
-       <p class="dim">Every frame was gradeable, so every state on the ribbon is a reading rather than a gap.</p>`;
+       For those frames there is no state, no steadiness score and no call about the patient.</p>`
+    : '';
 
-  const remedy = refusal ? `<p class="remedy"><b>What would fix it</b>
-      ${esc(refusal.details?.remedy || refusal.message)}
-      ${has(refusal.details?.frames) ? `<br><span class="faint">${refusal.details.frames} of ${total} frames were affected.</span>` : ''}</p>` : '';
+  // The remedy is often the same sentence as the refusal, already printed above.
+  const cure = refusal?.details?.remedy;
+  const fresh = cure && !String(refusal.message || '').includes(cure);
+  const remedy = refusal && (fresh || has(refusal.details?.frames))
+    ? `<p class="remedy">${fresh ? `<b>What would fix it</b>${esc(cure)}` : ''}
+      ${has(refusal.details?.frames) ? `<span class="faint">${refusal.details.frames} of ${total} frames were affected.</span>` : ''}</p>`
+    : '';
 
   const meter = `<div><div class="viewbar" role="img"
       aria-label="${esc(by.map(([k, n]) => `${k}: ${n} frames`).join(', '))}">${bar}</div>
@@ -94,7 +74,7 @@ export function viewPanel(record, lead = false) {
       id="sec-view" aria-labelledby="view-h">
     <div class="ph"><h3 id="view-h">What it could see</h3>
       ${degraded ? '<span class="chip refuse">watching withheld</span>' : '<span class="chip ok">view held</span>'}
-      <span class="sub">${((view.usable_fraction ?? 1) * 100).toFixed(1)}% of frames usable</span></div>
+      <span class="sub">${((view.usable_fraction ?? 1) * 100).toFixed(1)}% usable</span></div>
     <div class="pb">${lead ? `<div>${head}</div>${meter}` : `${head}${meter}`}</div>
   </section>`;
 }
@@ -107,8 +87,7 @@ export function evidencePanel(record, jobId) {
     </figure>`).join('');
   if (!items) return '';
   return `<section class="panel" id="sec-evidence" data-demo="evidence" aria-labelledby="ev-h">
-    <div class="ph"><h2 id="ev-h">Drawn by the service, from keypoints only</h2>
-      <span class="sub">${record.evidence.length} images, 0 of them photographs</span></div>
+    <div class="ph"><h2 id="ev-h">Drawn from keypoints only</h2></div>
     <div class="evid">${items}</div>
   </section>`;
 }

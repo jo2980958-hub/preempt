@@ -54,7 +54,7 @@ ROOM_JSON = Path(
     )
 )
 
-TAGLINE = "A call before the fall, from an abstracted pose and nothing else"
+TAGLINE = "A call before the fall"
 DESCRIPTION = (
     "Preempt watches a hospital or care-home room for the movement that comes "
     "before standing, scores how steady a person is once they are up, checks "

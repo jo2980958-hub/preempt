@@ -160,16 +160,16 @@ function facts(setup, outside, total) {
     const measured = cal.calibrated;
     const borrowed = summary.source === 'default';
     ui.previewCal.className = `chip ${measured && !borrowed ? 'ok' : 'warn'}`;
-    ui.previewCal.textContent = borrowed ? "The synthetic ward's camera, not this one"
+    ui.previewCal.textContent = borrowed ? 'Another camera, not this one'
       : measured ? 'Camera measured' : 'Camera assumed, not measured';
     ui.previewFacts.innerHTML = `
       <div><dt>Room</dt><dd>${esc(summary.name)}</dd></div>
-      <div><dt>Where it came from</dt><dd>${summary.source === 'default' ? 'the default room, from the synthetic ward' : 'the file you picked'}</dd></div>
+      <div><dt>Where it came from</dt><dd>${summary.source === 'default' ? 'the default room setup' : 'the file you picked'}</dd></div>
       <div><dt>Camera height</dt><dd>${esc(SOURCE[cal.camera_height] || cal.camera_height)}</dd></div>
       <div><dt>Focal length</dt><dd>${esc(SOURCE[cal.focal_length] || cal.focal_length)}</dd></div>
       <div><dt>Zones</dt><dd>${(setup?.zones || []).map((z) => esc(z.name)).join(', ') || 'none'}</dd></div>`;
     if (summary.source === 'default') {
-      warn.push('No room file picked, so this video will be measured against the synthetic ward. Unless it was filmed there, the zones and heights will not match it.');
+      warn.push('No room file picked, so this video will be measured against the default room setup. Unless it was filmed in that room, the zones and heights will not match it.');
     }
     if (!measured && cal.camera_height !== 'synthetic') {
       warn.push(`Every height in the result rests on a camera height and focal length that were ${cal.camera_height === 'unstated' ? 'never stated, so they are treated as assumed' : 'assumed'}. ${esc(cal.note || '')}`);

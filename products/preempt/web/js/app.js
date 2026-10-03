@@ -4,10 +4,9 @@ import { ui } from './dom.js';
 import { esc } from './format.js';
 import * as api from './api.js';
 import { renderResults } from './render.js';
-import { describeRun, railCounts } from './summary.js';
+import { describeRun } from './summary.js';
 import {
-  initTheme, status, watchSections, showEnvironment,
-  beginProgress, stepProgress, endProgress,
+  status, watchSections, beginProgress, stepProgress, endProgress,
 } from './shell.js';
 import {
   mountPicker, setSamples, currentSample, currentUpload,
@@ -26,7 +25,6 @@ async function run() {
   }
   busy = true;
   ui.start.disabled = true;
-  ui.empty.hidden = true;
   ui.crumbDot.className = 'dot';
   beginProgress('Handing the recording to the service');
   status('Running', 'busy');
@@ -69,24 +67,20 @@ function fail(err) {
 }
 
 function show(record, jobId) {
-  ui.empty.hidden = true;
   ui.results.hidden = false;
   compactPicker();
   renderResults(ui.results, record, jobId);
   describeRun(record);
-  railCounts(record);
 }
 
 async function boot() {
-  initTheme();
   watchSections();
   mountPicker(run, previewVideo);
   mountSetup(run);
   ui.start.addEventListener('click', run);
 
   try {
-    const [version, list] = await Promise.all([api.getVersion(), api.getSamples()]);
-    showEnvironment(version);
+    const list = await api.getSamples();
     setSamples(Array.isArray(list) ? list : (list.samples || []));
     status('Ready');
   } catch (err) {
