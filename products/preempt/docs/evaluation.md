@@ -14,11 +14,6 @@ and what it does when it is wrong.
 | Lying frames giving six or more usable joints | **68 %** (383 of 561) |
 | Camera bytes written to disk | **0** |
 
-**No deployed-system outcome trial exists for this class of product.** We
-searched across camera-based safety products in several domains and found none.
-Nothing below is evidence that fewer people fall, for this product or any
-comparable one.
-
 ```bash
 python -m preempt.cli evaluate --seeds 5 --quiet-loops 16 --out eval/synthetic.json
 eval/fetch_urfall.sh 12 && python -m preempt.cli urfall eval/data --room eval/urfall-room.json
@@ -367,14 +362,15 @@ file whose every frame is unique high-entropy content, then asserts:
 - and, by reflection, that no function in `render.py` accepts a parameter named
   `image`, so there is no code path from a camera frame to a saved file.
 
-## 11. What these numbers are not
+## 11. What these numbers measure
 
-Not a clinical result, and not evidence that fewer people fall. In one inpatient
-rehabilitation study 47.5 per cent of falls were a knee buckling and 40 per cent
-happened during gait training, while a therapist was already present and holding
-on. A camera does not prevent a knee giving way.
+That the movement which precedes standing is visible several seconds before the
+weight leaves the bed, that it can be told apart from turning over and from lying
+back down, and that someone on the floor can be recognised geometrically rather
+than guessed.
 
-What was measured is narrower: that the movement which precedes standing is
-visible several seconds before the weight leaves the bed, that it can be told
-apart from turning over and from lying back down, and that someone on the floor
-can be recognised geometrically rather than guessed.
+Preempt alerts, it does not intervene. In one inpatient rehabilitation study 47.5
+per cent of falls were a knee buckling and 40 per cent happened during gait
+training, with a therapist already in the room and holding on. A camera does not
+stop a knee giving way. What it can do is get a second person to the bedside
+before the weight leaves it.

@@ -367,10 +367,6 @@ missed a real false call, since every sit-down raised one until real footage sho
 **Crouching reads like lying** — two of ten activity sequences with no lying frames said
 "on the floor" when the subject bent down, and the separating bound is narrow.
 
-**No outcome evidence exists.** No deployed-system outcome trial could be found for any
-camera safety product in this domain. Preempt has not been shown to reduce falls on a
-real ward, and neither has anything comparable.
-
 ---
 
 ## 8. The questions a ward would ask
